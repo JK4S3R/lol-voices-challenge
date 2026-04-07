@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>LoL Voices - Ultimate Edition</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="main-wrapper">
+        <div class="game-container">
+            <h1>LoL Voices</h1>
+            
+            <div id="game-info">
+                <div class="timer-container">
+                    <div id="timer-bar"></div>
+                </div>
+                <button id="reset-btn" title="Recommencer">🔄</button>
+                <div class="info-box">🏆 <span id="streak-display">0</span></div>
+            </div>
+
+            <button id="start-btn">🎮 Démarrer la partie</button>
+            
+            <div id="game-area" style="display: none;">
+                <button id="play-btn">🔊 Réécouter</button>
+                <p id="feedback"></p>
+                
+                <div class="input-group">
+                    <div class="autocomplete-wrapper">
+                        <input type="text" id="user-input" autocomplete="off" spellcheck="false" placeholder="Nom du champion...">
+                        <div id="autocomplete-list" class="autocomplete-items"></div>
+                    </div>
+                    <button id="check-btn">Vérifier</button>
+                    <button id="skip-btn">Passer ⏭️</button>
+                </div>
+            </div>
+            
+            <img id="champ-image" src="" alt="Champion" style="display: none;">
+            <audio id="voice-player"></audio>
+        </div>
+
+        <div class="history-container">
+            <h3>Champions trouvés</h3>
+            <div id="champions-history"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
