@@ -55,7 +55,7 @@ const i18n = {
 
 function t(key) { return i18n[lang][key] || key; }
 
-function getLangCode() { return lang === 'fr' ? 'fr_fr' : 'en_us'; }
+function getLangCode() { return lang === 'fr' ? 'fr_fr' : 'default'; }
 
 // --- SOURCES AUDIO selon difficulté ---
 function getAudioSources(champ) {
