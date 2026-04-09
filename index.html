@@ -22,7 +22,6 @@
     <div class="main-wrapper">
         <div class="game-container">
 
-            <!-- HEADER : titre + auth -->
             <div class="header-row">
                 <h1>LoL Voices</h1>
                 <div class="auth-area">
@@ -36,7 +35,6 @@
                 </div>
             </div>
 
-            <!-- TIMER + SCORE -->
             <div id="game-info">
                 <div class="timer-container">
                     <div id="timer-bar"></div>
@@ -45,7 +43,6 @@
                 <div class="info-box">🏆 <span id="streak-display">0</span></div>
             </div>
 
-            <!-- SETUP -->
             <div id="setup-area">
                 <div class="setup-group">
                     <span class="setup-label" id="lang-label">Langue</span>
@@ -66,7 +63,6 @@
             </div>
 
             <p id="feedback"></p>
-
             <button id="start-btn">🎮 Démarrer la partie</button>
 
             <div id="game-area" style="display: none;">
@@ -91,7 +87,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="script.js"></script>
     <script>
         document.getElementById('btn-easy').addEventListener('click', () => {

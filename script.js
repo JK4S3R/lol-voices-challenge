@@ -5,7 +5,7 @@ const SUPABASE_URL = 'https://rufkhrfwmfkzsmzxhgeg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_LkNOHXfA4X2FMZ7E0Onr3Q_xgd699NP';
 
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let sb;
 
 // ============================================================
 // ÉTAT DU JEU
@@ -560,14 +560,16 @@ document.addEventListener('click', (e) => { if (e.target !== input) list.innerHT
 // ============================================================
 // INIT AUTH
 // ============================================================
-sb.auth.onAuthStateChange((_event, session) => {
-    currentUser = session?.user || null;
-    updateAuthUI();
-});
+window.addEventListener('DOMContentLoaded', async () => {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-(async () => {
+    sb.auth.onAuthStateChange((_event, session) => {
+        currentUser = session?.user || null;
+        updateAuthUI();
+    });
+
     const { data: { session } } = await sb.auth.getSession();
     currentUser = session?.user || null;
     updateAuthUI();
     await loadChampions();
-})();
+});
