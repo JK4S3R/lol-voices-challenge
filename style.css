@@ -84,6 +84,8 @@ h3 {
     margin: 0 0 14px 0;
     font-weight: 600;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ============================================================
@@ -421,7 +423,7 @@ button:active { transform: translateY(0); }
    HISTORIQUE (panneau droit)
    ============================================================ */
 .history-container {
-    flex: 0 0 160px;
+    flex: 0 0 150px;
     border: 1px solid #1a2030;
     border-top: 2px solid #785a28;
     padding: 1rem;
