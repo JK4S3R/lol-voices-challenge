@@ -458,21 +458,28 @@ function check() {
         score++;
         scoreDisplay.textContent = score;
         feedback.textContent = t('good') + currentChamp.name;
-        feedback.style.color = '#00ff00';
+        feedback.style.color = '#00e676';
+        feedback.classList.remove('animate');
+        void feedback.offsetWidth;
+        feedback.classList.add('animate');
 
         gameChampionsFound.push(currentChamp);
 
         const img = document.createElement('img');
         img.src = `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${currentChamp.id}.png`;
-        img.classList.add('history-icon');
+        img.classList.add('history-icon', 'new');
         img.title = currentChamp.name;
         historyContainer.prepend(img);
+        setTimeout(() => img.classList.remove('new'), 400);
 
         list.innerHTML = '';
         nextChampion();
     } else {
         feedback.textContent = t('wrong');
         feedback.style.color = '#ff4e50';
+        feedback.classList.remove('animate');
+        void feedback.offsetWidth;
+        feedback.classList.add('animate');
         input.value = '';
     }
 }
