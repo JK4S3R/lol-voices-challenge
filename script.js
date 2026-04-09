@@ -185,7 +185,7 @@ async function saveGame() {
 
     // 2. Mettre à jour les stats par champion (trouvés)
     for (const champ of gameChampionsFound) {
-        const { data: existing } = await supabase
+        const { data: existing } = await sb
             .from('champion_stats')
             .select('*')
             .eq('user_id', currentUser.id)
@@ -209,7 +209,7 @@ async function saveGame() {
 
     // 3. Mettre à jour les stats par champion (passés)
     for (const champ of gameChampionsSkipped) {
-        const { data: existing } = await supabase
+        const { data: existing } = await sb
             .from('champion_stats')
             .select('*')
             .eq('user_id', currentUser.id)
@@ -246,21 +246,21 @@ async function showDashboard() {
     document.getElementById('dashboard-content').innerHTML = '<p style="color:#c8aa6e;text-align:center">Chargement...</p>';
 
     // Récupérer les parties
-    const { data: games } = await supabase
+    const { data: games } = await sb
         .from('games')
         .select('*')
         .eq('user_id', currentUser.id)
         .order('played_at', { ascending: false });
 
     // Récupérer les stats champions
-    const { data: champStats } = await supabase
+    const { data: champStats } = await sb
         .from('champion_stats')
         .select('*')
         .eq('user_id', currentUser.id)
         .order('found', { ascending: false });
 
     // Leaderboard global
-    const { data: leaderboard } = await supabase
+    const { data: leaderboard } = await sb
         .from('games')
         .select('score, lang, difficulty, profiles(username, avatar_url)')
         .order('score', { ascending: false })
