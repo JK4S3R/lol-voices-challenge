@@ -615,3 +615,45 @@ button:active { transform: translateY(0); }
     .input-group { flex-wrap: wrap; }
     .autocomplete-wrapper { flex: 1 1 100%; }
 }
+
+/* ============================================================
+   ICÔNES SVG
+   ============================================================ */
+.btn-icon {
+    width: 15px;
+    height: 15px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 5px;
+    position: relative;
+    top: -1px;
+    flex-shrink: 0;
+}
+
+/* Icône seule (reset btn) */
+#reset-btn .btn-icon { margin-right: 0; width: 16px; height: 16px; }
+#reset-btn { display: flex; align-items: center; justify-content: center; padding: 7px 10px; }
+
+/* Info box avec icône */
+.info-box { display: flex; align-items: center; gap: 6px; }
+.info-box .btn-icon { margin-right: 0; width: 14px; height: 14px; top: 0; }
+
+/* Boutons avec icône */
+#start-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+#start-btn .btn-icon { margin-right: 0; width: 18px; height: 18px; top: 0; }
+
+#play-btn, #check-btn, #skip-btn,
+#login-btn, #logout-btn, #dashboard-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#play-btn .btn-icon, #check-btn .btn-icon, #skip-btn .btn-icon,
+#login-btn .btn-icon, #logout-btn .btn-icon, #dashboard-btn .btn-icon {
+    margin-right: 0;
+    top: 0;
+}
+
+/* Google icon garde ses couleurs */
+#login-btn .btn-icon { width: 14px; height: 14px; }
