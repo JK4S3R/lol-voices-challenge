@@ -4,8 +4,8 @@
 const SUPABASE_URL = 'https://rufkhrfwmfkzsmzxhgeg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_LkNOHXfA4X2FMZ7E0Onr3Q_xgd699NP';
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============================================================
 // ÉTAT DU JEU
