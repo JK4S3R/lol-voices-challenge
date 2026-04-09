@@ -5,7 +5,7 @@ const SUPABASE_URL = 'https://rufkhrfwmfkzsmzxhgeg.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_LkNOHXfA4X2FMZ7E0Onr3Q_xgd699NP';
 
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============================================================
 // ÉTAT DU JEU
@@ -127,14 +127,14 @@ const list = document.getElementById('autocomplete-list');
 // AUTH
 // ============================================================
 async function signInWithGoogle() {
-    await supabase.auth.signInWithOAuth({
+    await sb.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: 'https://jk4s3r.github.io/lol-voices-challenge/' }
     });
 }
 
 async function signOut() {
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
     currentUser = null;
     updateAuthUI();
 }
@@ -173,7 +173,7 @@ async function saveGame() {
     feedback.textContent = t('saving');
 
     // 1. Sauvegarder la partie
-    const { error: gameError } = await supabase.from('games').insert({
+    const { error: gameError } = await sb.from('games').insert({
         user_id: currentUser.id,
         score,
         difficulty,
@@ -193,11 +193,11 @@ async function saveGame() {
             .single();
 
         if (existing) {
-            await supabase.from('champion_stats')
+            await sb.from('champion_stats')
                 .update({ found: existing.found + 1, updated_at: new Date() })
                 .eq('id', existing.id);
         } else {
-            await supabase.from('champion_stats').insert({
+            await sb.from('champion_stats').insert({
                 user_id: currentUser.id,
                 champion_id: champ.id,
                 champion_name: champ.name,
@@ -217,11 +217,11 @@ async function saveGame() {
             .single();
 
         if (existing) {
-            await supabase.from('champion_stats')
+            await sb.from('champion_stats')
                 .update({ skipped: existing.skipped + 1, updated_at: new Date() })
                 .eq('id', existing.id);
         } else {
-            await supabase.from('champion_stats').insert({
+            await sb.from('champion_stats').insert({
                 user_id: currentUser.id,
                 champion_id: champ.id,
                 champion_name: champ.name,
@@ -560,13 +560,13 @@ document.addEventListener('click', (e) => { if (e.target !== input) list.innerHT
 // ============================================================
 // INIT AUTH
 // ============================================================
-supabase.auth.onAuthStateChange((_event, session) => {
+sb.auth.onAuthStateChange((_event, session) => {
     currentUser = session?.user || null;
     updateAuthUI();
 });
 
 (async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { session } } = await sb.auth.getSession();
     currentUser = session?.user || null;
     updateAuthUI();
     await loadChampions();
