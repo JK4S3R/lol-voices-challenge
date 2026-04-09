@@ -530,7 +530,10 @@ document.getElementById('skip-btn').onclick = () => {
     nextChampion();
 };
 document.getElementById('play-btn').onclick = () => { player.play(); input.focus(); };
-document.getElementById('login-btn').onclick = signInWithGoogle;
+document.getElementById('login-btn').onclick = () => {
+    initSupabase();
+    signInWithGoogle();
+};
 document.getElementById('logout-btn').onclick = signOut;
 document.getElementById('dashboard-btn').onclick = showDashboard;
 document.getElementById('close-dashboard').onclick = closeDashboard;
@@ -558,9 +561,10 @@ input.addEventListener('keydown', (e) => {
 document.addEventListener('click', (e) => { if (e.target !== input) list.innerHTML = ''; });
 
 // ============================================================
-// INIT AUTH
+// INIT
 // ============================================================
-window.addEventListener('DOMContentLoaded', async () => {
+function initSupabase() {
+    if (sb) return; // déjà initialisé
     sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     sb.auth.onAuthStateChange((_event, session) => {
@@ -568,8 +572,20 @@ window.addEventListener('DOMContentLoaded', async () => {
         updateAuthUI();
     });
 
-    const { data: { session } } = await sb.auth.getSession();
-    currentUser = session?.user || null;
-    updateAuthUI();
+    sb.auth.getSession().then(({ data: { session } }) => {
+        currentUser = session?.user || null;
+        updateAuthUI();
+    });
+}
+
+// Charger les champions dès que possible (pas besoin de Supabase)
+document.addEventListener('DOMContentLoaded', async () => {
     await loadChampions();
+
+    // Initialiser Supabase seulement si on revient d'un redirect OAuth
+    // (l'URL contient un token)
+    if (window.location.hash.includes('access_token') || 
+        window.location.search.includes('code=')) {
+        initSupabase();
+    }
 });

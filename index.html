@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LoL Voices</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://raw.communitydragon.org">
+    <link rel="preconnect" href="https://rufkhrfwmfkzsmzxhgeg.supabase.co">
 </head>
 <body>
 
@@ -87,8 +90,8 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script src="script.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
+    <script src="script.js" defer></script>
     <script>
         document.getElementById('btn-easy').addEventListener('click', () => {
             document.getElementById('easy-desc').style.display = '';
