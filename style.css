@@ -10,7 +10,7 @@ body {
     align-items: center;
     min-height: 100vh;
     margin: 0;
-    transition: background-image 0.5s ease-in-out; /* Transition douce entre les fonds */
+    transition: background-image 0.5s ease-in-out;
 }
 
 .main-wrapper {
@@ -33,6 +33,7 @@ body {
 
 h1 { margin-top: 0; color: #c8aa6e; text-transform: uppercase; letter-spacing: 3px; }
 
+/* --- GAME INFO (timer + score) --- */
 #game-info {
     display: flex;
     align-items: center;
@@ -79,16 +80,96 @@ h1 { margin-top: 0; color: #c8aa6e; text-transform: uppercase; letter-spacing: 3
     font-weight: bold;
 }
 
-/* --- FIX DU DÉPASSEMENT --- */
+/* --- ZONE SETUP --- */
+#setup-area {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-bottom: 24px;
+    background: rgba(30, 35, 40, 0.5);
+    border: 1px solid #2a2e33;
+    border-radius: 8px;
+    padding: 18px 20px;
+    text-align: left;
+}
+
+.setup-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.setup-label {
+    color: #c8aa6e;
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    min-width: 90px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 0;
+    border: 1px solid #c8aa6e;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.btn-group button {
+    border: none;
+    border-radius: 0;
+    padding: 6px 16px;
+    font-size: 0.9rem;
+    background: #1e2328;
+    color: #f0e6d2;
+    font-weight: normal;
+}
+
+.btn-group button:hover {
+    background: rgba(200, 170, 110, 0.2);
+    color: #c8aa6e;
+}
+
+.btn-group button.active {
+    background: #c8aa6e;
+    color: #010a13;
+    font-weight: bold;
+}
+
+.diff-desc {
+    font-size: 0.78rem;
+    color: #888;
+    font-style: italic;
+    margin-left: 4px;
+}
+
+/* --- BOUTONS GÉNÉRAUX --- */
+button {
+    background-color: #1e2328;
+    color: #c8aa6e;
+    border: 1px solid #c8aa6e;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+button:hover { background-color: #c8aa6e; color: #010a13; }
+
+/* --- INPUT GROUP --- */
 .input-group {
     display: flex;
     width: 100%;
     gap: 10px;
+    margin-top: 16px;
 }
 
 .autocomplete-wrapper {
     flex: 1;
-    min-width: 0; /* FORCE l'input à ne pas dépasser son conteneur */
+    min-width: 0;
     position: relative;
 }
 
@@ -103,21 +184,10 @@ h1 { margin-top: 0; color: #c8aa6e; text-transform: uppercase; letter-spacing: 3
     border-radius: 4px;
 }
 
-button {
-    background-color: #1e2328;
-    color: #c8aa6e;
-    border: 1px solid #c8aa6e;
-    padding: 10px 15px;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 4px;
-    white-space: nowrap;
-}
-
-button:hover { background-color: #c8aa6e; color: #010a13; }
-
+/* --- FEEDBACK --- */
 #feedback { font-size: 1.2rem; font-weight: bold; min-height: 30px; margin-bottom: 15px; }
 
+/* --- HISTORIQUE --- */
 .history-container {
     flex: 0.8;
     border: 1px solid #5b5a56;
@@ -134,8 +204,10 @@ button:hover { background-color: #c8aa6e; color: #010a13; }
     width: 42px; height: 42px;
     border-radius: 50%;
     border: 2px solid #c8aa6e;
+    cursor: default;
 }
 
+/* --- AUTOCOMPLETE --- */
 .autocomplete-items {
     position: absolute;
     border: 1px solid #c8aa6e;
@@ -149,4 +221,19 @@ button:hover { background-color: #c8aa6e; color: #010a13; }
 .autocomplete-items div { padding: 10px; cursor: pointer; border-bottom: 1px solid #333; text-align: left; }
 .autocomplete-items div:hover { background-color: #c8aa6e; color: #010a13; }
 
+/* --- IMAGE CHAMPION --- */
 #champ-image { max-width: 100%; margin-top: 20px; border: 2px solid #c8aa6e; border-radius: 4px; }
+
+/* --- BOUTON DÉMARRER --- */
+#start-btn {
+    font-size: 1.1rem;
+    padding: 12px 28px;
+    margin-top: 4px;
+}
+
+/* --- RESPONSIVE --- */
+@media (max-width: 650px) {
+    .main-wrapper { flex-direction: column; }
+    .history-container { max-height: 200px; }
+    .setup-group { flex-direction: column; align-items: flex-start; }
+}
