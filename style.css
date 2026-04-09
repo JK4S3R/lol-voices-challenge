@@ -78,10 +78,10 @@ h1 {
 
 h3 {
     color: #c8aa6e;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-size: 0.8rem;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
     margin: 0 0 14px 0;
+    font-weight: 600;
 }
 
 /* ============================================================
@@ -297,10 +297,10 @@ button:active { transform: translateY(0); }
 
 /* Bouton démarrer — premium */
 #start-btn {
-    font-size: 1rem;
-    padding: 14px 40px;
+    font-size: 0.95rem;
+    padding: 13px 36px;
     margin-top: 8px;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     text-transform: uppercase;
     border: 1px solid #c8aa6e;
     background: linear-gradient(180deg, #1e2a38 0%, #0f1520 100%);
@@ -419,7 +419,7 @@ button:active { transform: translateY(0); }
    HISTORIQUE (panneau droit)
    ============================================================ */
 .history-container {
-    flex: 0 0 180px;
+    flex: 0 0 220px;
     border: 1px solid #1a2030;
     border-top: 2px solid #785a28;
     padding: 1rem;
@@ -620,28 +620,42 @@ button:active { transform: translateY(0); }
    ICÔNES SVG
    ============================================================ */
 .btn-icon {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     display: inline-block;
     vertical-align: middle;
-    margin-right: 5px;
-    position: relative;
-    top: -1px;
     flex-shrink: 0;
+    overflow: visible;
 }
 
-/* Icône seule (reset btn) */
-#reset-btn .btn-icon { margin-right: 0; width: 16px; height: 16px; }
-#reset-btn { display: flex; align-items: center; justify-content: center; padding: 7px 10px; }
+/* Reset btn - icône seule */
+#reset-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    width: 36px;
+}
+#reset-btn .btn-icon { width: 15px; height: 15px; }
 
-/* Info box avec icône */
-.info-box { display: flex; align-items: center; gap: 6px; }
-.info-box .btn-icon { margin-right: 0; width: 14px; height: 14px; top: 0; }
+/* Info box */
+.info-box {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.info-box .btn-icon { width: 13px; height: 13px; }
 
-/* Boutons avec icône */
-#start-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-#start-btn .btn-icon { margin-right: 0; width: 18px; height: 18px; top: 0; }
+/* Bouton démarrer */
+#start-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+#start-btn .btn-icon { width: 16px; height: 16px; }
 
+/* Autres boutons */
 #play-btn, #check-btn, #skip-btn,
 #login-btn, #logout-btn, #dashboard-btn {
     display: inline-flex;
@@ -649,11 +663,8 @@ button:active { transform: translateY(0); }
     gap: 6px;
 }
 
-#play-btn .btn-icon, #check-btn .btn-icon, #skip-btn .btn-icon,
-#login-btn .btn-icon, #logout-btn .btn-icon, #dashboard-btn .btn-icon {
-    margin-right: 0;
-    top: 0;
-}
+/* Google icon */
+#login-btn .btn-icon { width: 13px; height: 13px; }
 
-/* Google icon garde ses couleurs */
-#login-btn .btn-icon { width: 14px; height: 14px; }
+/* H3 avec icône */
+h3 svg { width: 12px; height: 12px; vertical-align: middle; }
