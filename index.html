@@ -8,10 +8,35 @@
 </head>
 <body>
 
+    <!-- MODAL DASHBOARD -->
+    <div id="dashboard-modal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="modal-title">Mon dashboard</h2>
+                <button id="close-dashboard" class="close-btn">✕</button>
+            </div>
+            <div id="dashboard-content"></div>
+        </div>
+    </div>
+
     <div class="main-wrapper">
         <div class="game-container">
-            <h1>LoL Voices</h1>
 
+            <!-- HEADER : titre + auth -->
+            <div class="header-row">
+                <h1>LoL Voices</h1>
+                <div class="auth-area">
+                    <div id="user-info" style="display:none;">
+                        <img class="user-avatar" src="" alt="" style="display:none;">
+                        <span class="user-name"></span>
+                    </div>
+                    <button id="dashboard-btn" style="display:none;">Mon dashboard</button>
+                    <button id="login-btn">Se connecter avec Google</button>
+                    <button id="logout-btn" style="display:none;">Déconnexion</button>
+                </div>
+            </div>
+
+            <!-- TIMER + SCORE -->
             <div id="game-info">
                 <div class="timer-container">
                     <div id="timer-bar"></div>
@@ -20,7 +45,7 @@
                 <div class="info-box">🏆 <span id="streak-display">0</span></div>
             </div>
 
-            <!-- Zone de setup : langue + difficulté -->
+            <!-- SETUP -->
             <div id="setup-area">
                 <div class="setup-group">
                     <span class="setup-label" id="lang-label">Langue</span>
@@ -29,7 +54,6 @@
                         <button id="btn-en">EN</button>
                     </div>
                 </div>
-
                 <div class="setup-group">
                     <span class="setup-label" id="diff-label">Difficulté</span>
                     <div class="btn-group">
@@ -47,7 +71,6 @@
 
             <div id="game-area" style="display: none;">
                 <button id="play-btn">🔊 Réécouter</button>
-
                 <div class="input-group">
                     <div class="autocomplete-wrapper">
                         <input type="text" id="user-input" autocomplete="off" spellcheck="false" placeholder="Nom du champion...">
@@ -68,9 +91,8 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
     <script>
-        // Gestion affichage description difficulté
         document.getElementById('btn-easy').addEventListener('click', () => {
             document.getElementById('easy-desc').style.display = '';
             document.getElementById('hard-desc').style.display = 'none';
