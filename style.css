@@ -694,3 +694,20 @@ h3 svg { width: 12px; height: 12px; vertical-align: middle; }
 }
 
 #menu-btn .btn-icon { width: 15px; height: 15px; margin-right: 0; }
+
+/* --- TIMER DISPLAY --- */
+#timer-display {
+    font-size: 0.95rem;
+    font-weight: bold;
+    color: #c8aa6e;
+    letter-spacing: 2px;
+    min-width: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.3s;
+}
+
+#timer-display.warning {
+    color: #ff4e50;
+    animation: pulse-warning 0.8s ease-in-out infinite alternate;
+}
