@@ -711,3 +711,88 @@ h3 svg { width: 12px; height: 12px; vertical-align: middle; }
     color: #ff4e50;
     animation: pulse-warning 0.8s ease-in-out infinite alternate;
 }
+
+/* ============================================================
+   LEADERBOARD PAGE D'ACCUEIL
+   ============================================================ */
+.leaderboard-container {
+    flex: 0 0 180px;
+    border: 1px solid #1a2030;
+    border-top: 2px solid #785a28;
+    padding: 1rem;
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(5, 15, 28, 0.97) 0%, rgba(1, 10, 19, 0.98) 100%);
+    max-height: 80vh;
+    overflow-y: auto;
+    position: sticky;
+    top: 20px;
+}
+
+.leaderboard-container::-webkit-scrollbar { width: 4px; }
+.leaderboard-container::-webkit-scrollbar-track { background: #010a13; }
+.leaderboard-container::-webkit-scrollbar-thumb { background: #785a28; border-radius: 2px; }
+
+.lb-category {
+    font-size: 0.7rem;
+    color: #c8aa6e;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #1a2030;
+}
+
+.lb-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 4px;
+    border-bottom: 1px solid #0f1825;
+    font-size: 0.78rem;
+}
+
+.lb-row.first .lb-name { color: #c8aa6e; font-weight: bold; }
+.lb-row.second .lb-name { color: #a0b0c0; }
+.lb-row.third .lb-name { color: #cd7f32; }
+
+.lb-rank {
+    min-width: 22px;
+    font-size: 0.7rem;
+    color: #4a5060;
+    text-align: center;
+}
+
+.lb-name {
+    flex: 1;
+    color: #8090a0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.73rem;
+}
+
+.lb-score {
+    color: #c8aa6e;
+    font-weight: bold;
+    font-size: 0.78rem;
+    min-width: 24px;
+    text-align: right;
+}
+
+.lb-loading, .lb-empty {
+    color: #3a4050;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 12px 0;
+    font-style: italic;
+}
+
+@media (max-width: 700px) {
+    .leaderboard-container {
+        flex: none;
+        width: 100%;
+        max-height: 200px;
+        position: static;
+    }
+
+}

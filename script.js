@@ -518,22 +518,26 @@ document.getElementById('btn-fr').onclick = () => {
     document.getElementById('btn-fr').classList.add('active');
     document.getElementById('btn-en').classList.remove('active');
     applyTranslations();
+    loadLeaderboard(lang, difficulty);
 };
 document.getElementById('btn-en').onclick = () => {
     lang = 'en';
     document.getElementById('btn-en').classList.add('active');
     document.getElementById('btn-fr').classList.remove('active');
     applyTranslations();
+    loadLeaderboard(lang, difficulty);
 };
 document.getElementById('btn-easy').onclick = () => {
     difficulty = 'easy';
     document.getElementById('btn-easy').classList.add('active');
     document.getElementById('btn-hard').classList.remove('active');
+    loadLeaderboard(lang, difficulty);
 };
 document.getElementById('btn-hard').onclick = () => {
     difficulty = 'hard';
     document.getElementById('btn-hard').classList.add('active');
     document.getElementById('btn-easy').classList.remove('active');
+    loadLeaderboard(lang, difficulty);
 };
 
 document.getElementById('start-btn').onclick = initGame;
@@ -586,6 +590,61 @@ input.addEventListener('keydown', (e) => {
 
 document.addEventListener('click', (e) => { if (e.target !== input) list.innerHTML = ''; });
 
+
+// ============================================================
+// LEADERBOARD PAGE D'ACCUEIL
+// ============================================================
+async function loadLeaderboard(lang = 'fr', difficulty = 'easy') {
+    const list = document.getElementById('leaderboard-list');
+    if (!list) return;
+    list.innerHTML = '<p class="lb-loading">Chargement...</p>';
+
+    // Mettre à jour le label de catégorie
+    const cat = document.getElementById('lb-category');
+    if (cat) {
+        const langLabel = lang === 'fr' ? 'FR' : 'EN';
+        const diffLabel = difficulty === 'easy' ? 'Facile' : 'Difficile';
+        cat.textContent = langLabel + ' · ' + diffLabel;
+    }
+
+    if (!sb) initSupabase();
+
+    const { data, error } = await sb
+        .from('games')
+        .select('score, profiles(username, avatar_url)')
+        .eq('lang', lang)
+        .eq('difficulty', difficulty)
+        .order('score', { ascending: false })
+        .limit(50);
+
+    if (error || !data || data.length === 0) {
+        list.innerHTML = '<p class="lb-empty">Aucune partie encore.</p>';
+        return;
+    }
+
+    // Garder seulement le meilleur score par joueur
+    const seen = new Set();
+    const best = [];
+    for (const g of data) {
+        const name = g.profiles?.username || 'Anonyme';
+        if (!seen.has(name)) {
+            seen.add(name);
+            best.push({ score: g.score, name, avatar: g.profiles?.avatar_url });
+        }
+        if (best.length >= 10) break;
+    }
+
+    list.innerHTML = best.map((g, i) => `
+        <div class="lb-row ${i === 0 ? 'first' : i === 1 ? 'second' : i === 2 ? 'third' : ''}">
+            <span class="lb-rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
+            <span class="lb-name">${g.name}</span>
+            <span class="lb-score">${g.score}</span>
+        </div>
+    `).join('');
+}
+
+
+
 // ============================================================
 // INIT
 // ============================================================
@@ -607,6 +666,7 @@ function initSupabase() {
 // Charger les champions dès que possible (pas besoin de Supabase)
 document.addEventListener('DOMContentLoaded', async () => {
     await loadChampions();
+    loadLeaderboard('fr', 'easy');
 
     // Initialiser Supabase seulement si on revient d'un redirect OAuth
     // (l'URL contient un token)
