@@ -19,6 +19,7 @@ let TOTAL_TIME = 90;
 let timerInterval = null;
 let lang = 'fr';
 let difficulty = 'easy';
+let gameMode = 'normal'; // 'normal' ou 'survival'
 let currentUser = null;
 let gameChampionsFound = []; // champions trouvés dans la partie en cours
 let gameChampionsSkipped = []; // champions passés dans la partie en cours
@@ -143,6 +144,7 @@ async function saveGame() {
         score,
         difficulty,
         lang,
+        mode: gameMode,
         duration: TOTAL_TIME - timeLeft,
     });
 
@@ -228,7 +230,7 @@ async function saveGame() {
     feedback.style.color = '#c8aa6e';
 
     // Rafraîchir le leaderboard pour que le nouveau score apparaisse
-    loadLeaderboard(lang, difficulty);
+    loadLeaderboard(lang, difficulty, gameMode);
 }
 
 // ============================================================
@@ -401,8 +403,13 @@ function nextChampion() {
 
 function initGame() {
     score = 0;
-    TOTAL_TIME = 90;
-    timeLeft = TOTAL_TIME;
+    if (gameMode === 'survival') {
+        TOTAL_TIME = 15;          // timer court en Survie
+        timeLeft = TOTAL_TIME;
+    } else {
+        TOTAL_TIME = 90;
+        timeLeft = TOTAL_TIME;
+    }
     scoreDisplay.textContent = '0';
     feedback.textContent = '';
     historyContainer.innerHTML = '';
@@ -421,6 +428,11 @@ function initGame() {
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         timeLeft--;
+        // En Survie, le score = secondes totales survécues
+        if (gameMode === 'survival') {
+            score++;
+            scoreDisplay.textContent = score;
+        }
         updateTimer();
         if (timeLeft <= 0) endGame();
     }, 1000);
@@ -442,8 +454,16 @@ function updateTimer() {
 function check() {
     if (!currentChamp) return;
     if (normalize(input.value) === normalize(currentChamp.name)) {
-        score++;
-        scoreDisplay.textContent = score;
+        // En mode Normal, le score est le nombre de champions trouvés
+        // En mode Survie, le score est le temps (déjà géré par le setInterval)
+        if (gameMode === 'normal') {
+            score++;
+            scoreDisplay.textContent = score;
+        } else {
+            // Recharger le timer en Survie
+            timeLeft = TOTAL_TIME;
+            updateTimer();
+        }
         feedback.textContent = 'Bien joué ! ' + currentChamp.name;
         feedback.style.color = '#00e676';
         feedback.classList.remove('animate');
@@ -492,13 +512,29 @@ document.getElementById('btn-fr').onclick = () => {
     lang = 'fr';
     document.getElementById('btn-fr').classList.add('active');
     document.getElementById('btn-en').classList.remove('active');
-    loadLeaderboard(lang, difficulty);
+    loadLeaderboard(lang, difficulty, gameMode);
 };
 document.getElementById('btn-en').onclick = () => {
     lang = 'en';
     document.getElementById('btn-en').classList.add('active');
     document.getElementById('btn-fr').classList.remove('active');
-    loadLeaderboard(lang, difficulty);
+    loadLeaderboard(lang, difficulty, gameMode);
+};
+document.getElementById('btn-normal').onclick = () => {
+    gameMode = 'normal';
+    document.getElementById('btn-normal').classList.add('active');
+    document.getElementById('btn-survival').classList.remove('active');
+    document.getElementById('normal-desc').style.display = '';
+    document.getElementById('survival-desc').style.display = 'none';
+    loadLeaderboard(lang, difficulty, gameMode);
+};
+document.getElementById('btn-survival').onclick = () => {
+    gameMode = 'survival';
+    document.getElementById('btn-survival').classList.add('active');
+    document.getElementById('btn-normal').classList.remove('active');
+    document.getElementById('normal-desc').style.display = 'none';
+    document.getElementById('survival-desc').style.display = '';
+    loadLeaderboard(lang, difficulty, gameMode);
 };
 document.getElementById('btn-easy').onclick = () => {
     difficulty = 'easy';
@@ -506,7 +542,7 @@ document.getElementById('btn-easy').onclick = () => {
     document.getElementById('btn-hard').classList.remove('active');
     document.getElementById('easy-desc').style.display = '';
     document.getElementById('hard-desc').style.display = 'none';
-    loadLeaderboard(lang, difficulty);
+    loadLeaderboard(lang, difficulty, gameMode);
 };
 document.getElementById('btn-hard').onclick = () => {
     difficulty = 'hard';
@@ -514,15 +550,15 @@ document.getElementById('btn-hard').onclick = () => {
     document.getElementById('btn-easy').classList.remove('active');
     document.getElementById('easy-desc').style.display = 'none';
     document.getElementById('hard-desc').style.display = '';
-    loadLeaderboard(lang, difficulty);
+    loadLeaderboard(lang, difficulty, gameMode);
 };
 
 document.getElementById('start-btn').onclick = initGame;
 document.getElementById('menu-btn').onclick = () => {
     clearInterval(timerInterval);
     timerInterval = null;
-    // Réinitialiser le timer à sa valeur de base
-    TOTAL_TIME = 90;
+    // Réinitialiser le timer à sa valeur de base selon le mode
+    TOTAL_TIME = gameMode === 'survival' ? 15 : 90;
     timeLeft = TOTAL_TIME;
     updateTimer();
     // Réinitialiser le score et l'historique affiché
@@ -547,13 +583,13 @@ document.getElementById('skip-btn').onclick = skipChampion;
 function skipChampion() {
     if (!currentChamp) return;
     gameChampionsSkipped.push(currentChamp);
-    feedback.textContent = "C'était " + currentChamp.name + "  (−5s)";
+    const penalty = gameMode === 'survival' ? 3 : 5;
+    feedback.textContent = "C'était " + currentChamp.name + "  (−" + penalty + "s)";
     feedback.style.color = '#ff9040';
     feedback.classList.remove('animate');
     void feedback.offsetWidth;
     feedback.classList.add('animate');
-    // Pénalité de 5 secondes
-    timeLeft = Math.max(0, timeLeft - 5);
+    timeLeft = Math.max(0, timeLeft - penalty);
     updateTimer();
     if (timeLeft <= 0) {
         endGame();
@@ -641,7 +677,7 @@ document.addEventListener('click', (e) => { if (e.target !== input) list.innerHT
 // ============================================================
 // LEADERBOARD PAGE D'ACCUEIL
 // ============================================================
-async function loadLeaderboard(lang = 'fr', difficulty = 'easy') {
+async function loadLeaderboard(lang = 'fr', difficulty = 'easy', mode = 'normal') {
     const lbList = document.getElementById('leaderboard-list');
     if (!lbList) return;
     lbList.innerHTML = '<p class="lb-loading">Chargement...</p>';
@@ -649,9 +685,10 @@ async function loadLeaderboard(lang = 'fr', difficulty = 'easy') {
     // Mettre à jour le label de catégorie
     const cat = document.getElementById('lb-category');
     if (cat) {
+        const modeLabel = mode === 'survival' ? 'Survie' : 'Normal';
         const langLabel = lang === 'fr' ? 'FR' : 'EN';
         const diffLabel = difficulty === 'easy' ? 'Facile' : 'Difficile';
-        cat.textContent = langLabel + ' · ' + diffLabel;
+        cat.textContent = modeLabel + ' · ' + langLabel + ' · ' + diffLabel;
     }
 
     if (!sb) initSupabase();
@@ -661,6 +698,7 @@ async function loadLeaderboard(lang = 'fr', difficulty = 'easy') {
         .select('score, profiles(username, avatar_url)')
         .eq('lang', lang)
         .eq('difficulty', difficulty)
+        .eq('mode', mode)
         .order('score', { ascending: false })
         .limit(50);
 
@@ -713,7 +751,7 @@ function initSupabase() {
 // Charger les champions dès que possible (pas besoin de Supabase)
 document.addEventListener('DOMContentLoaded', async () => {
     await loadChampions();
-    loadLeaderboard('fr', 'easy');
+    loadLeaderboard('fr', 'easy', 'normal');
 
     // Initialiser Supabase seulement si on revient d'un redirect OAuth
     // (l'URL contient un token)
