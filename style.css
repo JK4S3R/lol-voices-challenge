@@ -800,3 +800,96 @@ h3 svg { width: 12px; height: 12px; vertical-align: middle; }
     }
 
 }
+
+/* ============================================================
+   ANIMATIONS : pop du score, shake de l'input
+   ============================================================ */
+@keyframes score-pop {
+    0%   { transform: scale(1);   color: #c8aa6e; }
+    40%  { transform: scale(1.35); color: #ffe6a0; text-shadow: 0 0 18px rgba(255, 230, 160, 0.7); }
+    100% { transform: scale(1);   color: #c8aa6e; }
+}
+#streak-display.pop {
+    display: inline-block;
+    animation: score-pop 0.35s ease-out;
+}
+
+@keyframes input-shake {
+    0%, 100% { transform: translateX(0); }
+    15%      { transform: translateX(-8px); }
+    30%      { transform: translateX(7px); }
+    45%      { transform: translateX(-5px); }
+    60%      { transform: translateX(4px); }
+    75%      { transform: translateX(-2px); }
+}
+.autocomplete-wrapper input.shake {
+    animation: input-shake 0.4s ease-in-out;
+    border-color: #ff4e50 !important;
+    box-shadow: 0 0 20px rgba(255, 78, 80, 0.35) !important;
+}
+
+/* Bouton mute son */
+#mute-btn {
+    background: transparent;
+    border: 1px solid #2a3040;
+    padding: 6px 10px;
+    border-radius: 3px;
+}
+#mute-btn:hover {
+    background: rgba(200, 170, 110, 0.1);
+    border-color: #c8aa6e;
+    transform: none;
+}
+#mute-btn .btn-icon { width: 16px; height: 16px; margin: 0; }
+
+/* Modale de confirmation */
+.confirm-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+}
+.confirm-box {
+    background: linear-gradient(180deg, rgba(5, 15, 28, 0.98), rgba(1, 10, 19, 0.99));
+    border: 1px solid #785a28;
+    border-top: 2px solid #c8aa6e;
+    border-radius: 4px;
+    padding: 28px 32px;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.9);
+}
+.confirm-box p {
+    color: #f0e6d2;
+    margin: 0 0 20px 0;
+    font-size: 0.95rem;
+}
+.confirm-box .confirm-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+/* Raccourcis clavier discrets */
+.shortcuts-hint {
+    margin-top: 10px;
+    font-size: 0.72rem;
+    color: #4a5060;
+    letter-spacing: 0.5px;
+    text-align: center;
+}
+.shortcuts-hint kbd {
+    display: inline-block;
+    padding: 2px 6px;
+    background: rgba(40, 48, 64, 0.6);
+    border: 1px solid #2a3040;
+    border-radius: 3px;
+    color: #888;
+    font-family: inherit;
+    font-size: 0.7rem;
+    margin: 0 2px;
+}
