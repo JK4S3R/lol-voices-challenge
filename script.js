@@ -39,112 +39,6 @@ const TXT = {
     noGames: 'Aucune partie jouée pour le moment.',
 };
 
-// ============================================================
-// EFFETS SONORES (Web Audio API, générés à la volée)
-// ============================================================
-const sfx = (() => {
-    let ctx = null;
-    let muted = localStorage.getItem('sfx-muted') === '1';
-
-    function ensureCtx() {
-        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
-        // Certains navigateurs suspendent le contexte audio jusqu'à la 1re interaction
-        if (ctx.state === 'suspended') ctx.resume();
-    }
-
-    function env(gain, attack, decay, sustain, release, now) {
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.25, now + attack);
-        gain.gain.linearRampToValueAtTime(0.15, now + attack + decay);
-        gain.gain.setValueAtTime(0.15, now + attack + decay + sustain);
-        gain.gain.linearRampToValueAtTime(0, now + attack + decay + sustain + release);
-    }
-
-    function tone(freq, type, duration) {
-        ensureCtx();
-        const now = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(freq, now);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        env(gain, 0.005, 0.05, duration * 0.5, duration * 0.4, now);
-        osc.start(now);
-        osc.stop(now + duration + 0.1);
-    }
-
-    function sweep(startFreq, endFreq, type, duration) {
-        ensureCtx();
-        const now = ctx.currentTime;
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = type;
-        osc.frequency.setValueAtTime(startFreq, now);
-        osc.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        env(gain, 0.005, 0.04, duration * 0.5, duration * 0.4, now);
-        osc.start(now);
-        osc.stop(now + duration + 0.1);
-    }
-
-    function noise(duration, filterFreq) {
-        ensureCtx();
-        const now = ctx.currentTime;
-        const bufferSize = ctx.sampleRate * duration;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const src = ctx.createBufferSource();
-        src.buffer = buffer;
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(filterFreq, now);
-        filter.Q.value = 1.2;
-        const gain = ctx.createGain();
-        src.connect(filter);
-        filter.connect(gain);
-        gain.connect(ctx.destination);
-        env(gain, 0.005, 0.03, duration * 0.4, duration * 0.5, now);
-        src.start(now);
-        src.stop(now + duration + 0.05);
-    }
-
-    return {
-        play(kind) {
-            if (muted) return;
-            try {
-                if (kind === 'success') {
-                    // Deux notes qui montent : do → mi (satisfaisant)
-                    tone(523.25, 'triangle', 0.08);
-                    setTimeout(() => tone(659.25, 'triangle', 0.12), 70);
-                } else if (kind === 'error') {
-                    // Buzz grave descendant
-                    sweep(220, 110, 'sawtooth', 0.18);
-                } else if (kind === 'skip') {
-                    // Whoosh : bruit filtré qui descend
-                    noise(0.22, 900);
-                } else if (kind === 'gameover') {
-                    // Trois notes descendantes
-                    tone(440, 'triangle', 0.12);
-                    setTimeout(() => tone(349.23, 'triangle', 0.12), 120);
-                    setTimeout(() => tone(261.63, 'triangle', 0.18), 240);
-                } else if (kind === 'tick') {
-                    // Tick discret pour le timer qui descend
-                    tone(1200, 'square', 0.03);
-                }
-            } catch (e) { /* ignorer si Web Audio indisponible */ }
-        },
-        toggleMute() {
-            muted = !muted;
-            localStorage.setItem('sfx-muted', muted ? '1' : '0');
-            return muted;
-        },
-        isMuted() { return muted; },
-    };
-})();
-
 function getLangCode() { return lang === 'fr' ? 'fr_fr' : 'default'; }
 
 // Normalise une chaîne pour la comparaison : minuscules, sans accents,
@@ -566,7 +460,6 @@ function check() {
         score++;
         scoreDisplay.textContent = score;
         animateScore();
-        sfx.play('success');
         // En Survie, on recharge aussi le timer
         if (gameMode === 'survival') {
             timeLeft = TOTAL_TIME;
@@ -595,7 +488,6 @@ function check() {
         feedback.classList.remove('animate');
         void feedback.offsetWidth;
         feedback.classList.add('animate');
-        sfx.play('error');
         // Shake de l'input
         input.classList.remove('shake');
         void input.offsetWidth;
@@ -607,7 +499,6 @@ function check() {
 async function endGame() {
     clearInterval(timerInterval);
     timerInterval = null;
-    sfx.play('gameover');
     document.getElementById('game-area').style.display = 'none';
     document.getElementById('setup-area').style.display = 'flex';
     document.getElementById('start-btn').style.display = 'block';
@@ -733,7 +624,6 @@ function skipChampion() {
     feedback.classList.remove('animate');
     void feedback.offsetWidth;
     feedback.classList.add('animate');
-    sfx.play('skip');
     timeLeft = Math.max(0, timeLeft - penalty);
     updateTimer();
     if (timeLeft <= 0) {
@@ -753,20 +643,6 @@ document.getElementById('close-dashboard').onclick = closeDashboard;
 document.getElementById('dashboard-modal').onclick = (e) => {
     if (e.target === document.getElementById('dashboard-modal')) closeDashboard();
 };
-
-// Bouton mute : bascule et met à jour l'icône
-function updateMuteIcon() {
-    const btn = document.getElementById('mute-btn');
-    if (!btn) return;
-    btn.innerHTML = sfx.isMuted()
-        ? '<svg class="btn-icon"><use href="#icon-volume-off"/></svg>'
-        : '<svg class="btn-icon"><use href="#icon-volume-on"/></svg>';
-}
-document.getElementById('mute-btn').onclick = () => {
-    sfx.toggleMute();
-    updateMuteIcon();
-};
-updateMuteIcon();
 
 // Index de la suggestion actuellement surlignée (-1 = aucune)
 let autocompleteIndex = -1;

@@ -828,20 +828,6 @@ h3 svg { width: 12px; height: 12px; vertical-align: middle; }
     box-shadow: 0 0 20px rgba(255, 78, 80, 0.35) !important;
 }
 
-/* Bouton mute son */
-#mute-btn {
-    background: transparent;
-    border: 1px solid #2a3040;
-    padding: 6px 10px;
-    border-radius: 3px;
-}
-#mute-btn:hover {
-    background: rgba(200, 170, 110, 0.1);
-    border-color: #c8aa6e;
-    transform: none;
-}
-#mute-btn .btn-icon { width: 16px; height: 16px; margin: 0; }
-
 /* Modale de confirmation */
 .confirm-modal {
     position: fixed;
