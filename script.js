@@ -420,6 +420,7 @@ function initGame() {
     document.getElementById('game-area').style.display = 'block';
     document.getElementById('setup-area').style.display = 'none';
     document.getElementById('game-info').style.display = '';
+    document.getElementById('history-container').style.display = '';
 
     availableChamps = [...champions];
     shuffle(availableChamps);
@@ -561,7 +562,10 @@ document.getElementById('btn-hard').onclick = () => {
     loadLeaderboard(lang, difficulty, gameMode);
 };
 
-document.getElementById('start-btn').onclick = initGame;
+document.getElementById('start-btn').onclick = () => {
+    document.body.classList.remove('settings-open');
+    initGame();
+};
 function showConfirmQuit(onYes) {
     const modal = document.createElement('div');
     modal.className = 'confirm-modal';
@@ -599,6 +603,7 @@ function returnToMenu() {
     document.getElementById('setup-area').style.display = 'flex';
     document.getElementById('start-btn').style.display = 'block';
     document.getElementById('game-info').style.display = 'none';
+    document.getElementById('history-container').style.display = 'none';
     document.getElementById('start-btn').innerHTML = '<svg class="btn-icon"><use href="#icon-sword"/></svg> Démarrer la partie';
     feedback.textContent = '';
     document.getElementById('champ-image').style.display = 'none';
@@ -712,8 +717,51 @@ document.addEventListener('click', (e) => { if (e.target !== input) list.innerHT
 
 
 // ============================================================
-// LEADERBOARD PAGE D'ACCUEIL
+// MOBILE : drawer paramètres + résumé
 // ============================================================
+function updateSettingsSummary() {
+    const summary = document.getElementById('settings-summary');
+    if (!summary) return;
+    const modeLabel = gameMode === 'survival' ? 'Survie' : 'Normal';
+    const langLabel = lang === 'fr' ? 'FR' : 'EN';
+    const diffLabel = difficulty === 'easy' ? 'Facile' : 'Difficile';
+    summary.textContent = `${modeLabel} · ${langLabel} · ${diffLabel}`;
+}
+
+function openMobileSettings() {
+    document.body.classList.add('settings-open');
+}
+function closeMobileSettings() {
+    document.body.classList.remove('settings-open');
+    updateSettingsSummary();
+}
+
+document.getElementById('settings-btn-mobile').onclick = (e) => {
+    e.stopPropagation();
+    openMobileSettings();
+};
+
+// Fermer en cliquant en dehors de la setup-area quand le drawer est ouvert
+document.addEventListener('click', (e) => {
+    if (!document.body.classList.contains('settings-open')) return;
+    const setupArea = document.getElementById('setup-area');
+    if (!setupArea.contains(e.target)) {
+        closeMobileSettings();
+    }
+});
+
+// Mettre à jour le résumé quand on change un sélecteur (et fermer le drawer en mobile)
+['btn-fr', 'btn-en', 'btn-easy', 'btn-hard', 'btn-normal', 'btn-survival'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const previous = el.onclick;
+    el.onclick = function (ev) {
+        if (previous) previous.call(this, ev);
+        updateSettingsSummary();
+    };
+});
+
+updateSettingsSummary();
 async function loadLeaderboard(lang = 'fr', difficulty = 'easy', mode = 'normal') {
     const lbList = document.getElementById('leaderboard-list');
     if (!lbList) return;

@@ -601,27 +601,203 @@ button:active { transform: translateY(0); }
     border-bottom: 1px solid #1a2030;
 }
 
+/* Le bouton paramètres mobile est caché par défaut en desktop */
+#settings-btn-mobile { display: none; }
+
 /* ============================================================
    RESPONSIVE MOBILE
    ============================================================ */
 @media (max-width: 700px) {
-    body { align-items: flex-start; padding: 10px 0; }
-    .main-wrapper { flex-direction: column; padding: 10px 0; }
-    .game-container { padding: 1.2rem; }
+    body { align-items: flex-start; padding: 0; }
+    .main-wrapper {
+        flex-direction: column;
+        padding: 12px;
+        gap: 12px;
+        width: 100%;
+    }
+    .game-container {
+        padding: 18px 16px 22px;
+        border-radius: 4px;
+    }
+
+    /* Header : titre et auth-area sur la même ligne, compactés */
+    .header-row {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        text-align: left;
+        margin-bottom: 16px;
+        gap: 8px;
+    }
+    h1 {
+        font-size: 1.15rem;
+        letter-spacing: 3px;
+    }
+    .auth-area {
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
+    }
+
+    /* Boutons header plus compacts en mobile */
+    #login-btn, #logout-btn, #dashboard-btn {
+        padding: 8px 12px;
+        font-size: 0.78rem;
+    }
+    #user-info { font-size: 0.8rem; }
+    .user-avatar { width: 24px; height: 24px; }
+
+    /* Le bouton paramètres mobile remplace setup-area visible */
+    #settings-btn-mobile {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 14px 16px;
+        margin: 4px 0 10px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        flex-wrap: wrap;
+    }
+    #settings-btn-mobile #settings-summary {
+        flex-basis: 100%;
+        margin-top: 4px;
+        font-size: 0.72rem;
+        font-weight: normal;
+        color: #888;
+        text-transform: none;
+        letter-spacing: 0.5px;
+    }
+
+    /* Setup-area cachée par défaut sur mobile, affichée comme drawer en bas quand ouverte */
+    #setup-area {
+        display: none;
+    }
+    body.settings-open #setup-area {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2500;
+        background: linear-gradient(180deg, rgba(5, 15, 28, 0.98), rgba(1, 10, 19, 0.99));
+        border-top: 2px solid #c8aa6e;
+        padding: 24px 18px max(28px, env(safe-area-inset-bottom));
+        gap: 20px;
+        max-height: 85vh;
+        overflow-y: auto;
+        animation: drawer-slide-up 0.3s ease-out;
+        box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.7);
+    }
+    body.settings-open::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(3px);
+        z-index: 2400;
+    }
+    @keyframes drawer-slide-up {
+        from { transform: translateY(100%); }
+        to   { transform: translateY(0); }
+    }
+
+    /* Setup-group : tout en colonne, avec plus d'air */
+    .setup-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        width: 100%;
+    }
+    .setup-label { font-size: 0.78rem; }
+    .btn-group { width: 100%; }
+    .btn-group button {
+        flex: 1;
+        padding: 12px 14px;
+        font-size: 0.85rem;
+        min-height: 44px;
+    }
+    .diff-desc { font-size: 0.78rem; }
+
+    /* Game-info : barre du timer compactée */
+    #game-info {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px 12px;
+    }
+    #timer-display { font-size: 0.9rem; min-width: 42px; }
+
+    /* Boutons d'action : pleine largeur, plus gros pour le tactile */
+    #start-btn {
+        width: 100%;
+        padding: 14px 18px;
+        font-size: 0.95rem;
+        min-height: 50px;
+    }
+    #play-btn {
+        width: 100%;
+        padding: 12px 18px;
+        min-height: 44px;
+        margin-bottom: 4px;
+    }
+
+    /* Input + boutons en grille pour tirer parti de la largeur */
+    .input-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+    .autocomplete-wrapper {
+        grid-column: 1 / -1;
+    }
+    .autocomplete-wrapper input {
+        font-size: 16px; /* important : empêche le zoom auto iOS sur focus */
+        padding: 14px 16px;
+        min-height: 48px;
+    }
+    #check-btn, #skip-btn {
+        padding: 12px;
+        min-height: 48px;
+        font-size: 0.9rem;
+        justify-content: center;
+    }
+
+    /* Cacher les raccourcis clavier en mobile (pas de clavier physique) */
+    .shortcuts-hint { display: none; }
+
+    /* Leaderboard plus compact en mobile */
+    .leaderboard-container {
+        flex: none;
+        width: 100%;
+        position: static;
+        padding: 14px 16px;
+    }
+    .leaderboard-container h3 { font-size: 0.7rem; }
+    .lb-category { font-size: 0.7rem; margin-bottom: 8px; }
+    .lb-row { font-size: 0.85rem; padding: 6px 10px; }
+    .lb-empty, .lb-loading { padding: 12px 0; font-size: 0.8rem; }
+
+    /* Historique champions trouvés : compact, juste au-dessus de la limite si vide */
     .history-container {
         flex: none;
         width: 100%;
-        max-height: 120px;
+        max-height: 110px;
         position: static;
+        padding: 12px 16px;
     }
-    .setup-group { flex-direction: column; align-items: flex-start; gap: 8px; }
-    .header-row { flex-direction: column; align-items: center; text-align: center; }
-    .auth-area { align-items: center; flex-direction: row; flex-wrap: wrap; justify-content: center; }
-    .dash-stats { flex-direction: column; }
-    h1 { font-size: 1.3rem; letter-spacing: 4px; }
-    #start-btn { width: 100%; }
-    .input-group { flex-wrap: wrap; }
-    .autocomplete-wrapper { flex: 1 1 100%; }
+    .history-container h3 { font-size: 0.7rem; margin-bottom: 8px; }
+
+    /* Dashboard en colonne */
+    .dash-stats { flex-direction: column; gap: 12px; }
+
+    /* Modale de confirmation : marges latérales en mobile */
+    .confirm-box {
+        margin: 0 20px;
+        padding: 24px 22px;
+    }
 }
 
 /* ============================================================
@@ -789,16 +965,6 @@ h3 svg { width: 12px; height: 12px; vertical-align: middle; }
     text-align: center;
     padding: 12px 0;
     font-style: italic;
-}
-
-@media (max-width: 700px) {
-    .leaderboard-container {
-        flex: none;
-        width: 100%;
-        max-height: 200px;
-        position: static;
-    }
-
 }
 
 /* ============================================================
