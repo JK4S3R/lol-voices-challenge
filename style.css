@@ -614,10 +614,13 @@ button:active { transform: translateY(0); }
         padding: 12px;
         gap: 12px;
         width: 100%;
+        align-items: stretch;
     }
     .game-container {
         padding: 18px 16px 22px;
         border-radius: 4px;
+        width: 100%;
+        flex: none;
     }
 
     /* Header : titre et auth-area sur la même ligne, compactés */
@@ -628,6 +631,7 @@ button:active { transform: translateY(0); }
         text-align: left;
         margin-bottom: 16px;
         gap: 8px;
+        flex-wrap: wrap;
     }
     h1 {
         font-size: 1.15rem;
@@ -637,12 +641,31 @@ button:active { transform: translateY(0); }
         flex-direction: row;
         align-items: center;
         gap: 6px;
+        width: 100%;
+        flex-wrap: wrap;
     }
-
-    /* Boutons header plus compacts en mobile */
-    #login-btn, #logout-btn, #dashboard-btn {
-        padding: 8px 12px;
+    /* User info prend toute la première ligne */
+    #user-info {
+        flex-basis: 100%;
+        justify-content: center;
+        font-size: 0.85rem;
+        margin-bottom: 4px;
+    }
+    /* Les deux boutons dashboard + déconnexion partagent la largeur */
+    #dashboard-btn,
+    #logout-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        justify-content: center;
+        padding: 10px 8px;
         font-size: 0.78rem;
+    }
+    /* Login seul prend toute la largeur quand pas connecté */
+    #login-btn {
+        flex: 1 1 100%;
+        justify-content: center;
+        padding: 10px 12px;
+        font-size: 0.82rem;
     }
     #user-info { font-size: 0.8rem; }
     .user-avatar { width: 24px; height: 24px; }

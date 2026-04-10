@@ -183,7 +183,16 @@
                 </button>
                 <div class="input-group">
                     <div class="autocomplete-wrapper">
-                        <input type="text" id="user-input" autocomplete="off" spellcheck="false" placeholder="Nom du champion...">
+                        <input type="text"
+                               id="user-input"
+                               name="champion-guess-field"
+                               autocomplete="off"
+                               autocorrect="off"
+                               autocapitalize="off"
+                               spellcheck="false"
+                               inputmode="text"
+                               data-form-type="other"
+                               placeholder="Nom du champion...">
                         <div id="autocomplete-list" class="autocomplete-items"></div>
                     </div>
                     <button id="check-btn">
