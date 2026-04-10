@@ -392,15 +392,18 @@ button:active { transform: translateY(0); }
    ============================================================ */
 .autocomplete-items {
     position: absolute;
-    border: 1px solid #2a3040;
+    border: 1px solid #785a28;
     border-top: none;
-    z-index: 99;
-    top: 100%; left: 0; right: 0;
+    z-index: 1000;
+    top: calc(100% + 2px);
+    left: -4px;
+    right: -4px;
     background: rgba(5, 15, 28, 0.98);
-    max-height: 200px;
+    max-height: 240px;
     overflow-y: auto;
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 6px 6px;
     backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(200, 170, 110, 0.15);
 }
 
 .autocomplete-items div {

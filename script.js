@@ -24,76 +24,20 @@ let gameChampionsFound = []; // champions trouvés dans la partie en cours
 let gameChampionsSkipped = []; // champions passés dans la partie en cours
 
 // ============================================================
-// TRADUCTIONS
+// TEXTES UI (français uniquement)
 // ============================================================
-const i18n = {
-    fr: {
-        title: 'LoL Voices',
-        start: 'Démarrer la partie',
-        replay: 'Rejouer',
-        relisten: 'Réécouter',
-        placeholder: 'Nom du champion...',
-        verify: 'Vérifier',
-        skip: 'Passer',
-        found: 'Champions trouvés',
-        good: 'Bien joué ! ',
-        wrong: 'Faux !',
-        itwas: "C'était ",
-        finished: 'Fini ! Score : ',
-        easy: 'Facile',
-        hard: 'Difficile',
-        langLabel: 'Langue',
-        diffLabel: 'Difficulté',
-        easyDesc: 'Sons de sélection uniquement',
-        hardDesc: 'Toutes les répliques (déplacements, sorts…)',
-        login: 'Se connecter avec Google',
-        logout: 'Déconnexion',
-        dashboard: 'Mon dashboard',
-        highscore: 'Meilleur score',
-        avgScore: 'Score moyen',
-        gamesPlayed: 'Parties jouées',
-        bestChamp: 'Champion le mieux reconnu',
-        worstChamp: 'Champion le moins bien reconnu',
-        leaderboard: 'Classement',
-        noGames: 'Aucune partie jouée pour le moment.',
-        saving: 'Sauvegarde...',
-        saved: 'Score sauvegardé !',
-    },
-    en: {
-        title: 'LoL Voices',
-        start: 'Start game',
-        replay: 'Play again',
-        relisten: 'Replay',
-        placeholder: 'Champion name...',
-        verify: 'Check',
-        skip: 'Skip',
-        found: 'Found champions',
-        good: 'Nice! ',
-        wrong: 'Wrong!',
-        itwas: 'It was ',
-        finished: 'Done! Score: ',
-        easy: 'Easy',
-        hard: 'Hard',
-        langLabel: 'Language',
-        diffLabel: 'Difficulty',
-        easyDesc: 'Champion select sounds only',
-        hardDesc: 'All voice lines (move, spell…)',
-        login: 'Sign in with Google',
-        logout: 'Sign out',
-        dashboard: 'My dashboard',
-        highscore: 'Best score',
-        avgScore: 'Average score',
-        gamesPlayed: 'Games played',
-        bestChamp: 'Best recognized champion',
-        worstChamp: 'Least recognized champion',
-        leaderboard: 'Leaderboard',
-        noGames: 'No games played yet.',
-        saving: 'Saving...',
-        saved: 'Score saved!',
-    }
+const TXT = {
+    saving: 'Sauvegarde...',
+    saved: 'Score sauvegardé !',
+    highscore: 'Meilleur score',
+    avgScore: 'Score moyen',
+    gamesPlayed: 'Parties jouées',
+    bestChamp: 'Champion le mieux reconnu',
+    worstChamp: 'Champion le moins bien reconnu',
+    leaderboard: 'Classement',
+    noGames: 'Aucune partie jouée pour le moment.',
 };
 
-function t(key) { return i18n[lang][key] || key; }
 function getLangCode() { return lang === 'fr' ? 'fr_fr' : 'default'; }
 
 // ============================================================
@@ -170,7 +114,7 @@ function updateAuthUI() {
 async function saveGame() {
     if (!currentUser) return;
 
-    feedback.textContent = t('saving');
+    feedback.textContent = TXT.saving;
 
     // 1. Sauvegarder la partie
     const { error: gameError } = await sb.from('games').insert({
@@ -231,7 +175,7 @@ async function saveGame() {
         }
     }
 
-    feedback.textContent = t('saved');
+    feedback.textContent = TXT.saved;
     feedback.style.color = '#c8aa6e';
 }
 
@@ -267,7 +211,7 @@ async function showDashboard() {
         .limit(10);
 
     if (!games || games.length === 0) {
-        document.getElementById('dashboard-content').innerHTML = `<p style="color:#888;text-align:center">${t('noGames')}</p>`;
+        document.getElementById('dashboard-content').innerHTML = `<p style="color:#888;text-align:center">${TXT.noGames}</p>`;
         return;
     }
 
@@ -295,27 +239,27 @@ async function showDashboard() {
         <div class="dash-stats">
             <div class="dash-stat">
                 <div class="dash-stat-value">${highscore}</div>
-                <div class="dash-stat-label">${t('highscore')}</div>
+                <div class="dash-stat-label">${TXT.highscore}</div>
             </div>
             <div class="dash-stat">
                 <div class="dash-stat-value">${avg}</div>
-                <div class="dash-stat-label">${t('avgScore')}</div>
+                <div class="dash-stat-label">${TXT.avgScore}</div>
             </div>
             <div class="dash-stat">
                 <div class="dash-stat-value">${games.length}</div>
-                <div class="dash-stat-label">${t('gamesPlayed')}</div>
+                <div class="dash-stat-label">${TXT.gamesPlayed}</div>
             </div>
         </div>
 
         ${bestChamp ? `
         <div class="dash-section">
-            <div class="dash-section-title">🏆 ${t('bestChamp')}</div>
+            <div class="dash-section-title">🏆 ${TXT.bestChamp}</div>
             <div style="color:#f0e6d2">${bestChamp.champion_name} — ${bestChamp.found} fois trouvé</div>
         </div>` : ''}
 
         ${worstChamp ? `
         <div class="dash-section">
-            <div class="dash-section-title">💀 ${t('worstChamp')}</div>
+            <div class="dash-section-title">💀 ${TXT.worstChamp}</div>
             <div style="color:#f0e6d2">${worstChamp.champion_name} — ${worstChamp.skipped} fois passé</div>
         </div>` : ''}
 
@@ -325,7 +269,7 @@ async function showDashboard() {
         </div>
 
         <div class="dash-section">
-            <div class="dash-section-title">🌍 ${t('leaderboard')}</div>
+            <div class="dash-section-title">🌍 ${TXT.leaderboard}</div>
             ${leaderboardHTML}
         </div>
     `;
@@ -378,13 +322,6 @@ function playAudio(champ) {
             player.play().catch(() => {});
         }
     });
-}
-
-// ============================================================
-// TRADUCTIONS UI
-// ============================================================
-function applyTranslations() {
-    // Interface toujours en français — seule la langue audio change
 }
 
 // ============================================================
@@ -499,14 +436,12 @@ document.getElementById('btn-fr').onclick = () => {
     lang = 'fr';
     document.getElementById('btn-fr').classList.add('active');
     document.getElementById('btn-en').classList.remove('active');
-    applyTranslations();
     loadLeaderboard(lang, difficulty);
 };
 document.getElementById('btn-en').onclick = () => {
     lang = 'en';
     document.getElementById('btn-en').classList.add('active');
     document.getElementById('btn-fr').classList.remove('active');
-    applyTranslations();
     loadLeaderboard(lang, difficulty);
 };
 document.getElementById('btn-easy').onclick = () => {
@@ -525,10 +460,22 @@ document.getElementById('btn-hard').onclick = () => {
 document.getElementById('start-btn').onclick = initGame;
 document.getElementById('menu-btn').onclick = () => {
     clearInterval(timerInterval);
+    timerInterval = null;
+    // Réinitialiser le timer à sa valeur de base
+    TOTAL_TIME = difficulty === 'hard' ? 120 : 90;
+    timeLeft = TOTAL_TIME;
+    updateTimer();
+    // Réinitialiser le score et l'historique affiché
+    score = 0;
+    scoreDisplay.textContent = '0';
+    historyContainer.innerHTML = '';
+    gameChampionsFound = [];
+    gameChampionsSkipped = [];
+    currentChamp = null;
     document.getElementById('game-area').style.display = 'none';
     document.getElementById('setup-area').style.display = 'flex';
     document.getElementById('start-btn').style.display = 'block';
-    // start text géré dans le HTML
+    document.getElementById('start-btn').innerHTML = '<svg class="btn-icon"><use href="#icon-sword"/></svg> Démarrer la partie';
     feedback.textContent = '';
     document.getElementById('champ-image').style.display = 'none';
     player.pause();
