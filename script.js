@@ -419,6 +419,7 @@ function initGame() {
     document.getElementById('start-btn').style.display = 'none';
     document.getElementById('game-area').style.display = 'block';
     document.getElementById('setup-area').style.display = 'none';
+    document.getElementById('game-info').style.display = '';
 
     availableChamps = [...champions];
     shuffle(availableChamps);
@@ -497,6 +498,7 @@ async function endGame() {
     document.getElementById('game-area').style.display = 'none';
     document.getElementById('setup-area').style.display = 'flex';
     document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('game-info').style.display = 'none';
     document.getElementById('start-btn').innerHTML = '<svg class="btn-icon"><use href="#icon-sword"/></svg> Rejouer';
     feedback.textContent = 'Fini ! Score : ' + score;
     feedback.style.color = '#c8aa6e';
@@ -571,6 +573,7 @@ document.getElementById('menu-btn').onclick = () => {
     document.getElementById('game-area').style.display = 'none';
     document.getElementById('setup-area').style.display = 'flex';
     document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('game-info').style.display = 'none';
     document.getElementById('start-btn').innerHTML = '<svg class="btn-icon"><use href="#icon-sword"/></svg> Démarrer la partie';
     feedback.textContent = '';
     document.getElementById('champ-image').style.display = 'none';
