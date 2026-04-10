@@ -528,6 +528,16 @@ document.getElementById('btn-hard').onclick = () => {
 };
 
 document.getElementById('start-btn').onclick = initGame;
+document.getElementById('menu-btn').onclick = () => {
+    clearInterval(timerInterval);
+    document.getElementById('game-area').style.display = 'none';
+    document.getElementById('setup-area').style.display = 'flex';
+    document.getElementById('start-btn').style.display = 'block';
+    document.getElementById('start-btn').textContent = t('start');
+    feedback.textContent = '';
+    document.getElementById('champ-image').style.display = 'none';
+    player.pause();
+};
 document.getElementById('reset-btn').onclick = initGame;
 document.getElementById('check-btn').onclick = check;
 document.getElementById('skip-btn').onclick = () => {

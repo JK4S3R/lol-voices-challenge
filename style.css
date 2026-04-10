@@ -42,7 +42,7 @@ body {
     background: linear-gradient(180deg, rgba(5, 15, 28, 0.97) 0%, rgba(1, 10, 19, 0.98) 100%);
     box-shadow: 0 0 60px rgba(0,0,0,0.9), inset 0 1px 0 rgba(200,170,110,0.15);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Ligne déco en haut */
@@ -276,7 +276,7 @@ button {
     font-size: 0.9rem;
     transition: all 0.2s ease;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 button::after {
@@ -672,3 +672,31 @@ button:active { transform: translateY(0); }
 
 /* H3 avec icône */
 h3 svg { width: 12px; height: 12px; vertical-align: middle; }
+
+/* --- GAME TOPBAR --- */
+.game-topbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+#menu-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    border-color: #2a3040;
+    color: #4a5060;
+    background: transparent;
+    display: flex;
+    align-items: center;
+}
+
+#menu-btn:hover {
+    border-color: #c8aa6e;
+    color: #c8aa6e;
+    background: rgba(200,170,110,0.08);
+    box-shadow: none;
+    transform: none;
+}
+
+#menu-btn .btn-icon { width: 14px; height: 14px; margin-right: 0; }
