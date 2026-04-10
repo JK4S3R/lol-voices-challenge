@@ -429,11 +429,6 @@ function initGame() {
     clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         timeLeft--;
-        // En Survie, le score = secondes totales survécues
-        if (gameMode === 'survival') {
-            score++;
-            scoreDisplay.textContent = score;
-        }
         updateTimer();
         if (timeLeft <= 0) endGame();
     }, 1000);
@@ -455,13 +450,11 @@ function updateTimer() {
 function check() {
     if (!currentChamp) return;
     if (normalize(input.value) === normalize(currentChamp.name)) {
-        // En mode Normal, le score est le nombre de champions trouvés
-        // En mode Survie, le score est le temps (déjà géré par le setInterval)
-        if (gameMode === 'normal') {
-            score++;
-            scoreDisplay.textContent = score;
-        } else {
-            // Recharger le timer en Survie
+        // 1 champion trouvé = 1 point, dans les deux modes
+        score++;
+        scoreDisplay.textContent = score;
+        // En Survie, on recharge aussi le timer
+        if (gameMode === 'survival') {
             timeLeft = TOTAL_TIME;
             updateTimer();
         }
