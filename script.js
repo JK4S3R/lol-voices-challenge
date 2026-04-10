@@ -492,6 +492,8 @@ function check() {
         input.classList.remove('shake');
         void input.offsetWidth;
         input.classList.add('shake');
+        // Retirer la classe une fois l'animation terminée pour que la bordure rouge disparaisse
+        setTimeout(() => input.classList.remove('shake'), 500);
         input.value = '';
     }
 }
