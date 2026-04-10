@@ -434,8 +434,6 @@ function updateTimer() {
     const p = (timeLeft / TOTAL_TIME) * 100;
     timerBar.style.width = p + '%';
     timerBar.classList.toggle('warning', timeLeft <= 15);
-
-    // Affichage chiffres
     const mins = Math.floor(timeLeft / 60);
     const secs = timeLeft % 60;
     const display = document.getElementById('timer-display');
