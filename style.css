@@ -673,30 +673,24 @@ button:active { transform: translateY(0); }
 /* H3 avec icône */
 h3 svg { width: 12px; height: 12px; vertical-align: middle; }
 
-/* --- GAME TOPBAR --- */
-.game-topbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
+/* --- MENU BTN (dans game-info) --- */
 #menu-btn {
-    padding: 6px 10px;
-    font-size: 0.8rem;
-    border-color: #2a3040;
+    background: rgba(30, 35, 40, 0.8);
+    border: 1px solid #2a2e33;
     color: #4a5060;
-    background: transparent;
+    padding: 5px 10px;
     display: flex;
     align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
 }
 
 #menu-btn:hover {
     border-color: #c8aa6e;
     color: #c8aa6e;
-    background: rgba(200,170,110,0.08);
-    box-shadow: none;
+    background: rgba(200,170,110,0.1);
     transform: none;
+    box-shadow: none;
 }
 
-#menu-btn .btn-icon { width: 14px; height: 14px; margin-right: 0; }
+#menu-btn .btn-icon { width: 15px; height: 15px; margin-right: 0; }
