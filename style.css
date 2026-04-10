@@ -416,7 +416,8 @@ button:active { transform: translateY(0); }
     transition: all 0.15s;
 }
 
-.autocomplete-items div:hover {
+.autocomplete-items div:hover,
+.autocomplete-items div.active {
     background: rgba(200, 170, 110, 0.15);
     color: #c8aa6e;
     padding-left: 20px;

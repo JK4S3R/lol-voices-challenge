@@ -40,6 +40,27 @@ const TXT = {
 
 function getLangCode() { return lang === 'fr' ? 'fr_fr' : 'default'; }
 
+// Normalise une chaîne pour la comparaison : minuscules, sans accents,
+// sans apostrophes ni espaces. Permet de matcher "Kaï'Sa" avec "kaisa".
+function normalize(str) {
+    return (str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '') // diacritiques
+        .replace(/['’\s.\-]/g, '');       // apostrophes, espaces, points, tirets
+}
+
+// Échappe le HTML pour éviter l'injection XSS quand on construit du HTML
+// avec des données venant de la base (usernames, etc.)
+function escapeHtml(str) {
+    return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // ============================================================
 // AUDIO
 // ============================================================
@@ -125,58 +146,89 @@ async function saveGame() {
         duration: TOTAL_TIME - timeLeft,
     });
 
-    if (gameError) { console.error(gameError); return; }
-
-    // 2. Mettre à jour les stats par champion (trouvés)
-    for (const champ of gameChampionsFound) {
-        const { data: existing } = await sb
-            .from('champion_stats')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .eq('champion_id', champ.id)
-            .single();
-
-        if (existing) {
-            await sb.from('champion_stats')
-                .update({ found: existing.found + 1, updated_at: new Date() })
-                .eq('id', existing.id);
-        } else {
-            await sb.from('champion_stats').insert({
-                user_id: currentUser.id,
-                champion_id: champ.id,
-                champion_name: champ.name,
-                found: 1,
-                skipped: 0,
-            });
-        }
+    if (gameError) {
+        console.error('Erreur sauvegarde partie:', gameError);
+        feedback.textContent = 'Erreur de sauvegarde';
+        feedback.style.color = '#ff4e50';
+        return;
     }
 
-    // 3. Mettre à jour les stats par champion (passés)
-    for (const champ of gameChampionsSkipped) {
-        const { data: existing } = await sb
-            .from('champion_stats')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .eq('champion_id', champ.id)
-            .single();
-
-        if (existing) {
-            await sb.from('champion_stats')
-                .update({ skipped: existing.skipped + 1, updated_at: new Date() })
-                .eq('id', existing.id);
-        } else {
-            await sb.from('champion_stats').insert({
-                user_id: currentUser.id,
-                champion_id: champ.id,
-                champion_name: champ.name,
-                found: 0,
-                skipped: 1,
-            });
+    // 2. Agréger les stats par champion en mémoire
+    // (un même champion peut apparaître plusieurs fois dans une partie)
+    const aggregated = new Map();
+    for (const champ of gameChampionsFound) {
+        const key = champ.id;
+        if (!aggregated.has(key)) {
+            aggregated.set(key, { champ, found: 0, skipped: 0 });
         }
+        aggregated.get(key).found++;
+    }
+    for (const champ of gameChampionsSkipped) {
+        const key = champ.id;
+        if (!aggregated.has(key)) {
+            aggregated.set(key, { champ, found: 0, skipped: 0 });
+        }
+        aggregated.get(key).skipped++;
+    }
+
+    // 3. Récupérer les stats existantes en UNE SEULE requête
+    const champIds = Array.from(aggregated.keys());
+    if (champIds.length === 0) {
+        feedback.textContent = TXT.saved;
+        feedback.style.color = '#c8aa6e';
+        return;
+    }
+
+    const { data: existingStats, error: selectError } = await sb
+        .from('champion_stats')
+        .select('champion_id, found, skipped')
+        .eq('user_id', currentUser.id)
+        .in('champion_id', champIds);
+
+    if (selectError) {
+        console.error('Erreur lecture stats:', selectError);
+        feedback.textContent = 'Erreur de sauvegarde';
+        feedback.style.color = '#ff4e50';
+        return;
+    }
+
+    // Indexer les stats existantes par champion_id
+    const existingByChamp = new Map();
+    for (const row of (existingStats || [])) {
+        existingByChamp.set(row.champion_id, row);
+    }
+
+    // 4. Construire les lignes à upsert en additionnant
+    const rows = [];
+    for (const [champId, agg] of aggregated) {
+        const existing = existingByChamp.get(champId);
+        rows.push({
+            user_id: currentUser.id,
+            champion_id: champId,
+            champion_name: agg.champ.name,
+            found: (existing?.found || 0) + agg.found,
+            skipped: (existing?.skipped || 0) + agg.skipped,
+            updated_at: new Date().toISOString(),
+        });
+    }
+
+    // 5. UPSERT en UNE SEULE requête au lieu de N × 2
+    const { error: upsertError } = await sb
+        .from('champion_stats')
+        .upsert(rows, { onConflict: 'user_id,champion_id' });
+
+    if (upsertError) {
+        console.error('Erreur upsert stats:', upsertError);
+        feedback.textContent = 'Erreur de sauvegarde';
+        feedback.style.color = '#ff4e50';
+        return;
     }
 
     feedback.textContent = TXT.saved;
     feedback.style.color = '#c8aa6e';
+
+    // Rafraîchir le leaderboard pour que le nouveau score apparaisse
+    loadLeaderboard(lang, difficulty);
 }
 
 // ============================================================
@@ -186,32 +238,39 @@ async function showDashboard() {
     if (!currentUser) return;
 
     const modal = document.getElementById('dashboard-modal');
+    const content = document.getElementById('dashboard-content');
     modal.style.display = 'flex';
-    document.getElementById('dashboard-content').innerHTML = '<p style="color:#c8aa6e;text-align:center">Chargement...</p>';
+    content.innerHTML = '<p style="color:#c8aa6e;text-align:center">Chargement...</p>';
 
     // Récupérer les parties
-    const { data: games } = await sb
+    const { data: games, error: gamesErr } = await sb
         .from('games')
         .select('*')
         .eq('user_id', currentUser.id)
         .order('played_at', { ascending: false });
 
     // Récupérer les stats champions
-    const { data: champStats } = await sb
+    const { data: champStats, error: statsErr } = await sb
         .from('champion_stats')
         .select('*')
         .eq('user_id', currentUser.id)
         .order('found', { ascending: false });
 
     // Leaderboard global
-    const { data: leaderboard } = await sb
+    const { data: leaderboard, error: lbErr } = await sb
         .from('games')
         .select('score, lang, difficulty, profiles(username, avatar_url)')
         .order('score', { ascending: false })
         .limit(10);
 
+    if (gamesErr || statsErr || lbErr) {
+        console.error('Erreur dashboard:', gamesErr || statsErr || lbErr);
+        content.innerHTML = '<p style="color:#ff4e50;text-align:center">Erreur de chargement. Réessaie plus tard.</p>';
+        return;
+    }
+
     if (!games || games.length === 0) {
-        document.getElementById('dashboard-content').innerHTML = `<p style="color:#888;text-align:center">${TXT.noGames}</p>`;
+        content.innerHTML = `<p style="color:#888;text-align:center">${TXT.noGames}</p>`;
         return;
     }
 
@@ -222,7 +281,7 @@ async function showDashboard() {
 
     const leaderboardHTML = leaderboard?.map((g, i) => `
         <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2e33;">
-            <span style="color:${i === 0 ? '#c8aa6e' : '#f0e6d2'}">${i + 1}. ${g.profiles?.username || 'Anonyme'}</span>
+            <span style="color:${i === 0 ? '#c8aa6e' : '#f0e6d2'}">${i + 1}. ${escapeHtml(g.profiles?.username || 'Anonyme')}</span>
             <span style="color:#c8aa6e;font-weight:bold">${g.score}</span>
         </div>
     `).join('') || '';
@@ -230,7 +289,7 @@ async function showDashboard() {
     const recentGames = games.slice(0, 5).map(g => `
         <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2e33;font-size:0.85rem;">
             <span style="color:#888">${new Date(g.played_at).toLocaleDateString()}</span>
-            <span style="color:#888">${g.difficulty} · ${g.lang.toUpperCase()}</span>
+            <span style="color:#888">${escapeHtml(g.difficulty)} · ${escapeHtml((g.lang || '').toUpperCase())}</span>
             <span style="color:#c8aa6e;font-weight:bold">${g.score} pts</span>
         </div>
     `).join('');
@@ -254,13 +313,13 @@ async function showDashboard() {
         ${bestChamp ? `
         <div class="dash-section">
             <div class="dash-section-title">🏆 ${TXT.bestChamp}</div>
-            <div style="color:#f0e6d2">${bestChamp.champion_name} — ${bestChamp.found} fois trouvé</div>
+            <div style="color:#f0e6d2">${escapeHtml(bestChamp.champion_name)} — ${bestChamp.found} fois trouvé</div>
         </div>` : ''}
 
         ${worstChamp ? `
         <div class="dash-section">
             <div class="dash-section-title">💀 ${TXT.worstChamp}</div>
-            <div style="color:#f0e6d2">${worstChamp.champion_name} — ${worstChamp.skipped} fois passé</div>
+            <div style="color:#f0e6d2">${escapeHtml(worstChamp.champion_name)} — ${worstChamp.skipped} fois passé</div>
         </div>` : ''}
 
         <div class="dash-section">
@@ -382,7 +441,7 @@ function updateTimer() {
 
 function check() {
     if (!currentChamp) return;
-    if (input.value.toLowerCase().trim() === currentChamp.name.toLowerCase().trim()) {
+    if (normalize(input.value) === normalize(currentChamp.name)) {
         score++;
         scoreDisplay.textContent = score;
         feedback.textContent = 'Bien joué ! ' + currentChamp.name;
@@ -414,17 +473,14 @@ function check() {
 
 async function endGame() {
     clearInterval(timerInterval);
+    timerInterval = null;
     document.getElementById('game-area').style.display = 'none';
     document.getElementById('setup-area').style.display = 'flex';
     document.getElementById('start-btn').style.display = 'block';
-    document.getElementById('start-btn').textContent = 'Rejouer';
+    document.getElementById('start-btn').innerHTML = '<svg class="btn-icon"><use href="#icon-sword"/></svg> Rejouer';
     feedback.textContent = 'Fini ! Score : ' + score;
     feedback.style.color = '#c8aa6e';
-
-    if (currentChamp) {
-        document.getElementById('champ-image').src = `https://ddragon.leagueoflegends.com/cdn/img/champion/splash/${currentChamp.alias}_0.jpg`;
-        document.getElementById('champ-image').style.display = 'block';
-    }
+    player.pause();
 
     if (currentUser) await saveGame();
 }
@@ -448,12 +504,16 @@ document.getElementById('btn-easy').onclick = () => {
     difficulty = 'easy';
     document.getElementById('btn-easy').classList.add('active');
     document.getElementById('btn-hard').classList.remove('active');
+    document.getElementById('easy-desc').style.display = '';
+    document.getElementById('hard-desc').style.display = 'none';
     loadLeaderboard(lang, difficulty);
 };
 document.getElementById('btn-hard').onclick = () => {
     difficulty = 'hard';
     document.getElementById('btn-hard').classList.add('active');
     document.getElementById('btn-easy').classList.remove('active');
+    document.getElementById('easy-desc').style.display = 'none';
+    document.getElementById('hard-desc').style.display = '';
     loadLeaderboard(lang, difficulty);
 };
 
@@ -483,6 +543,7 @@ document.getElementById('menu-btn').onclick = () => {
 document.getElementById('reset-btn').onclick = initGame;
 document.getElementById('check-btn').onclick = check;
 document.getElementById('skip-btn').onclick = () => {
+    if (!currentChamp) return;
     gameChampionsSkipped.push(currentChamp);
     feedback.textContent = "C'était " + currentChamp.name;
     feedback.style.color = '#c8aa6e';
@@ -500,21 +561,60 @@ document.getElementById('dashboard-modal').onclick = (e) => {
     if (e.target === document.getElementById('dashboard-modal')) closeDashboard();
 };
 
-input.addEventListener('input', () => {
-    const val = input.value.toLowerCase();
+// Index de la suggestion actuellement surlignée (-1 = aucune)
+let autocompleteIndex = -1;
+
+function refreshAutocomplete() {
+    const val = normalize(input.value);
     list.innerHTML = '';
+    autocompleteIndex = -1;
     if (!val) return;
-    champions.filter(c => c.name.toLowerCase().includes(val)).slice(0, 5).forEach(m => {
+    const matches = champions
+        .filter(c => normalize(c.name).includes(val))
+        .slice(0, 8);
+    matches.forEach((m, i) => {
         const div = document.createElement('div');
-        div.textContent = m.name;
+        div.textContent = m.name; // textContent = pas de risque XSS
+        div.dataset.index = i;
         div.onclick = () => { input.value = m.name; list.innerHTML = ''; check(); };
         list.appendChild(div);
     });
-});
+}
+
+function highlightAutocomplete(idx) {
+    const items = list.querySelectorAll('div');
+    if (items.length === 0) return;
+    autocompleteIndex = ((idx % items.length) + items.length) % items.length;
+    items.forEach((el, i) => el.classList.toggle('active', i === autocompleteIndex));
+    items[autocompleteIndex].scrollIntoView({ block: 'nearest' });
+}
+
+input.addEventListener('input', refreshAutocomplete);
 
 input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') check();
-    if (e.key === 'ArrowRight') { e.preventDefault(); document.getElementById('skip-btn').click(); }
+    const items = list.querySelectorAll('div');
+    if (e.key === 'ArrowDown' && items.length) {
+        e.preventDefault();
+        highlightAutocomplete(autocompleteIndex + 1);
+    } else if (e.key === 'ArrowUp' && items.length) {
+        e.preventDefault();
+        highlightAutocomplete(autocompleteIndex - 1);
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (autocompleteIndex >= 0 && items[autocompleteIndex]) {
+            input.value = items[autocompleteIndex].textContent;
+            list.innerHTML = '';
+        }
+        check();
+    } else if (e.key === 'Escape') {
+        list.innerHTML = '';
+        autocompleteIndex = -1;
+    } else if (e.key === 'Tab' && items.length) {
+        e.preventDefault();
+        const pick = autocompleteIndex >= 0 ? items[autocompleteIndex] : items[0];
+        input.value = pick.textContent;
+        list.innerHTML = '';
+    }
 });
 
 document.addEventListener('click', (e) => { if (e.target !== input) list.innerHTML = ''; });
@@ -524,9 +624,9 @@ document.addEventListener('click', (e) => { if (e.target !== input) list.innerHT
 // LEADERBOARD PAGE D'ACCUEIL
 // ============================================================
 async function loadLeaderboard(lang = 'fr', difficulty = 'easy') {
-    const list = document.getElementById('leaderboard-list');
-    if (!list) return;
-    list.innerHTML = '<p class="lb-loading">Chargement...</p>';
+    const lbList = document.getElementById('leaderboard-list');
+    if (!lbList) return;
+    lbList.innerHTML = '<p class="lb-loading">Chargement...</p>';
 
     // Mettre à jour le label de catégorie
     const cat = document.getElementById('lb-category');
@@ -547,7 +647,7 @@ async function loadLeaderboard(lang = 'fr', difficulty = 'easy') {
         .limit(50);
 
     if (error || !data || data.length === 0) {
-        list.innerHTML = '<p class="lb-empty">Aucune partie encore.</p>';
+        lbList.innerHTML = '<p class="lb-empty">Aucune partie encore.</p>';
         return;
     }
 
@@ -563,10 +663,10 @@ async function loadLeaderboard(lang = 'fr', difficulty = 'easy') {
         if (best.length >= 10) break;
     }
 
-    list.innerHTML = best.map((g, i) => `
+    lbList.innerHTML = best.map((g, i) => `
         <div class="lb-row ${i === 0 ? 'first' : i === 1 ? 'second' : i === 2 ? 'third' : ''}">
             <span class="lb-rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</span>
-            <span class="lb-name">${g.name}</span>
+            <span class="lb-name">${escapeHtml(g.name)}</span>
             <span class="lb-score">${g.score}</span>
         </div>
     `).join('');

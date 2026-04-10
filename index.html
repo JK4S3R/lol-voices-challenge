@@ -142,7 +142,7 @@
                         <button id="btn-hard">Difficile</button>
                     </div>
                     <span class="diff-desc" id="easy-desc">Sons de sélection uniquement</span>
-                    <span class="diff-desc" id="hard-desc" style="display:none"></span>
+                    <span class="diff-desc" id="hard-desc" style="display:none">Sons de sélection + sons de ban</span>
                 </div>
             </div>
 
@@ -186,15 +186,5 @@
 
     <script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js" defer></script>
     <script src="script.js" defer></script>
-    <script>
-        document.getElementById('btn-easy').addEventListener('click', () => {
-            document.getElementById('easy-desc').style.display = '';
-            document.getElementById('hard-desc').style.display = 'none';
-        });
-        document.getElementById('btn-hard').addEventListener('click', () => {
-            document.getElementById('easy-desc').style.display = 'none';
-            document.getElementById('hard-desc').style.display = '';
-        });
-    </script>
 </body>
 </html>
