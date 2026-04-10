@@ -401,7 +401,7 @@ function nextChampion() {
 
 function initGame() {
     score = 0;
-    TOTAL_TIME = difficulty === 'hard' ? 120 : 90;
+    TOTAL_TIME = 90;
     timeLeft = TOTAL_TIME;
     scoreDisplay.textContent = '0';
     feedback.textContent = '';
@@ -522,7 +522,7 @@ document.getElementById('menu-btn').onclick = () => {
     clearInterval(timerInterval);
     timerInterval = null;
     // Réinitialiser le timer à sa valeur de base
-    TOTAL_TIME = difficulty === 'hard' ? 120 : 90;
+    TOTAL_TIME = 90;
     timeLeft = TOTAL_TIME;
     updateTimer();
     // Réinitialiser le score et l'historique affiché
@@ -542,13 +542,25 @@ document.getElementById('menu-btn').onclick = () => {
 };
 document.getElementById('reset-btn').onclick = initGame;
 document.getElementById('check-btn').onclick = check;
-document.getElementById('skip-btn').onclick = () => {
+document.getElementById('skip-btn').onclick = skipChampion;
+
+function skipChampion() {
     if (!currentChamp) return;
     gameChampionsSkipped.push(currentChamp);
-    feedback.textContent = "C'était " + currentChamp.name;
-    feedback.style.color = '#c8aa6e';
+    feedback.textContent = "C'était " + currentChamp.name + "  (−5s)";
+    feedback.style.color = '#ff9040';
+    feedback.classList.remove('animate');
+    void feedback.offsetWidth;
+    feedback.classList.add('animate');
+    // Pénalité de 5 secondes
+    timeLeft = Math.max(0, timeLeft - 5);
+    updateTimer();
+    if (timeLeft <= 0) {
+        endGame();
+        return;
+    }
     nextChampion();
-};
+}
 document.getElementById('play-btn').onclick = () => { player.play(); input.focus(); };
 document.getElementById('login-btn').onclick = () => {
     initSupabase();
@@ -609,11 +621,17 @@ input.addEventListener('keydown', (e) => {
     } else if (e.key === 'Escape') {
         list.innerHTML = '';
         autocompleteIndex = -1;
-    } else if (e.key === 'Tab' && items.length) {
+    } else if (e.key === 'Tab') {
         e.preventDefault();
-        const pick = autocompleteIndex >= 0 ? items[autocompleteIndex] : items[0];
-        input.value = pick.textContent;
-        list.innerHTML = '';
+        if (items.length === 0) {
+            // Pas de suggestions → Tab = passer au champion suivant
+            skipChampion();
+        } else {
+            // Il y a des suggestions → Tab = auto-complète
+            const pick = autocompleteIndex >= 0 ? items[autocompleteIndex] : items[0];
+            input.value = pick.textContent;
+            list.innerHTML = '';
+        }
     }
 });
 
