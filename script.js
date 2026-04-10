@@ -384,23 +384,7 @@ function playAudio(champ) {
 // TRADUCTIONS UI
 // ============================================================
 function applyTranslations() {
-    document.querySelector('h1').textContent = t('title');
-    const startBtn = document.getElementById('start-btn');
-    if (startBtn.textContent !== t('replay')) startBtn.textContent = t('start');
-    document.getElementById('play-btn').textContent = t('relisten');
-    document.getElementById('user-input').placeholder = t('placeholder');
-    document.getElementById('check-btn').textContent = t('verify');
-    document.getElementById('skip-btn').textContent = t('skip');
-    document.querySelector('.history-container h3').textContent = t('found');
-    document.getElementById('lang-label').textContent = t('langLabel');
-    document.getElementById('diff-label').textContent = t('diffLabel');
-    document.getElementById('btn-easy').textContent = t('easy');
-    document.getElementById('btn-hard').textContent = t('hard');
-    document.getElementById('easy-desc').textContent = t('easyDesc');
-    document.getElementById('hard-desc').textContent = t('hardDesc');
-    document.getElementById('login-btn').textContent = t('login');
-    document.getElementById('logout-btn').textContent = t('logout');
-    document.getElementById('dashboard-btn').textContent = t('dashboard');
+    // Interface toujours en français — seule la langue audio change
 }
 
 // ============================================================
@@ -466,7 +450,7 @@ function check() {
     if (input.value.toLowerCase().trim() === currentChamp.name.toLowerCase().trim()) {
         score++;
         scoreDisplay.textContent = score;
-        feedback.textContent = t('good') + currentChamp.name;
+        feedback.textContent = 'Bien joué ! ' + currentChamp.name;
         feedback.style.color = '#00e676';
         feedback.classList.remove('animate');
         void feedback.offsetWidth;
@@ -484,7 +468,7 @@ function check() {
         list.innerHTML = '';
         nextChampion();
     } else {
-        feedback.textContent = t('wrong');
+        feedback.textContent = 'Faux !';
         feedback.style.color = '#ff4e50';
         feedback.classList.remove('animate');
         void feedback.offsetWidth;
@@ -498,8 +482,8 @@ async function endGame() {
     document.getElementById('game-area').style.display = 'none';
     document.getElementById('setup-area').style.display = 'flex';
     document.getElementById('start-btn').style.display = 'block';
-    document.getElementById('start-btn').textContent = t('replay');
-    feedback.textContent = t('finished') + score;
+    document.getElementById('start-btn').textContent = 'Rejouer';
+    feedback.textContent = 'Fini ! Score : ' + score;
     feedback.style.color = '#c8aa6e';
 
     if (currentChamp) {
@@ -546,7 +530,7 @@ document.getElementById('menu-btn').onclick = () => {
     document.getElementById('game-area').style.display = 'none';
     document.getElementById('setup-area').style.display = 'flex';
     document.getElementById('start-btn').style.display = 'block';
-    document.getElementById('start-btn').textContent = t('start');
+    // start text géré dans le HTML
     feedback.textContent = '';
     document.getElementById('champ-image').style.display = 'none';
     player.pause();
@@ -555,7 +539,7 @@ document.getElementById('reset-btn').onclick = initGame;
 document.getElementById('check-btn').onclick = check;
 document.getElementById('skip-btn').onclick = () => {
     gameChampionsSkipped.push(currentChamp);
-    feedback.textContent = t('itwas') + currentChamp.name;
+    feedback.textContent = "C'était " + currentChamp.name;
     feedback.style.color = '#c8aa6e';
     nextChampion();
 };
