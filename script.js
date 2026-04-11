@@ -116,6 +116,8 @@ function updateAuthUI() {
         logoutBtn.style.display = 'inline-block';
         dashboardBtn.style.display = 'inline-block';
         userInfo.style.display = 'flex';
+        const cta = document.getElementById('login-cta');
+        if (cta) cta.style.display = 'none';
         userInfo.querySelector('.user-name').textContent = currentUser.user_metadata?.full_name || currentUser.email;
         const avatar = userInfo.querySelector('.user-avatar');
         if (currentUser.user_metadata?.avatar_url) {
@@ -150,7 +152,7 @@ async function saveGame() {
 
     if (gameError) {
         console.error('Erreur sauvegarde partie:', gameError);
-        feedback.textContent = 'Erreur de sauvegarde';
+        feedback.textContent = 'Oups, ton score n\'a pas pu être sauvegardé. Vérifie ta connexion.';
         feedback.style.color = '#ff4e50';
         return;
     }
@@ -189,7 +191,7 @@ async function saveGame() {
 
     if (selectError) {
         console.error('Erreur lecture stats:', selectError);
-        feedback.textContent = 'Erreur de sauvegarde';
+        feedback.textContent = 'Oups, ton score n\'a pas pu être sauvegardé. Vérifie ta connexion.';
         feedback.style.color = '#ff4e50';
         return;
     }
@@ -221,7 +223,7 @@ async function saveGame() {
 
     if (upsertError) {
         console.error('Erreur upsert stats:', upsertError);
-        feedback.textContent = 'Erreur de sauvegarde';
+        feedback.textContent = 'Oups, ton score n\'a pas pu être sauvegardé. Vérifie ta connexion.';
         feedback.style.color = '#ff4e50';
         return;
     }
@@ -421,6 +423,10 @@ function initGame() {
     document.getElementById('setup-area').style.display = 'none';
     document.getElementById('game-info').style.display = '';
     document.getElementById('history-container').style.display = '';
+    const ctaEl = document.getElementById('login-cta');
+    if (ctaEl) ctaEl.style.display = 'none';
+    const taglineEl = document.querySelector('.tagline');
+    if (taglineEl) taglineEl.style.display = 'none';
 
     availableChamps = [...champions];
     shuffle(availableChamps);
@@ -604,6 +610,10 @@ function returnToMenu() {
     document.getElementById('start-btn').style.display = 'block';
     document.getElementById('game-info').style.display = 'none';
     document.getElementById('history-container').style.display = 'none';
+    const tagEl = document.querySelector('.tagline');
+    if (tagEl) tagEl.style.display = '';
+    const ctaEl2 = document.getElementById('login-cta');
+    if (ctaEl2 && !currentUser) ctaEl2.style.display = '';
     document.getElementById('start-btn').innerHTML = '<svg class="btn-icon"><use href="#icon-sword"/></svg> Démarrer la partie';
     feedback.textContent = '';
     document.getElementById('champ-image').style.display = 'none';
@@ -640,7 +650,10 @@ function skipChampion() {
     nextChampion();
 }
 document.getElementById('play-btn').onclick = () => { player.play(); input.focus(); };
-document.getElementById('login-btn').onclick = () => {
+document.getElementById('login-btn').onclick = (e) => {
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Connexion...';
     initSupabase();
     signInWithGoogle();
 };
@@ -788,7 +801,7 @@ async function loadLeaderboard(lang = 'fr', difficulty = 'easy', mode = 'normal'
         .limit(50);
 
     if (error || !data || data.length === 0) {
-        lbList.innerHTML = '<p class="lb-empty">Aucune partie encore.</p>';
+        lbList.innerHTML = '<p class="lb-empty">Sois le premier à marquer ! 🏆</p>';
         return;
     }
 

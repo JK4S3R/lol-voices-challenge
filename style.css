@@ -604,6 +604,45 @@ button:active { transform: translateY(0); }
 /* Le bouton paramètres mobile est caché par défaut en desktop */
 #settings-btn-mobile { display: none; }
 
+/* Tagline sous le titre */
+.tagline {
+    color: #8090a0;
+    font-size: 0.85rem;
+    font-style: italic;
+    margin: 0 0 18px 0;
+    text-align: center;
+    letter-spacing: 0.3px;
+}
+
+/* Bannière CTA connexion */
+.login-cta {
+    background: rgba(200, 170, 110, 0.08);
+    border: 1px solid rgba(200, 170, 110, 0.25);
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin: 12px 0;
+    color: #c8aa6e;
+    font-size: 0.8rem;
+    text-align: center;
+    letter-spacing: 0.3px;
+}
+
+/* Spinner pour loading state */
+.spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(200, 170, 110, 0.3);
+    border-top-color: #c8aa6e;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 /* ============================================================
    RESPONSIVE MOBILE
    ============================================================ */

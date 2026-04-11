@@ -117,6 +117,8 @@
                 </div>
             </div>
 
+            <p class="tagline">Devine le champion à sa voix et grimpe au classement.</p>
+
             <div id="game-info" style="display: none;">
                 <div class="timer-container">
                     <div id="timer-bar"></div>
@@ -161,8 +163,8 @@
                 <div class="setup-group">
                     <span class="setup-label">Difficulté</span>
                     <div class="btn-group">
-                        <button id="btn-easy" class="active">Facile</button>
-                        <button id="btn-hard">Difficile</button>
+                        <button id="btn-easy" class="active" title="Sons joués lors de la sélection en champion select">Facile</button>
+                        <button id="btn-hard" title="Sons de sélection + sons joués lors d'un ban">Difficile</button>
                     </div>
                     <span class="diff-desc" id="easy-desc">Sons de sélection uniquement</span>
                     <span class="diff-desc" id="hard-desc" style="display:none">Sons de sélection + sons de ban</span>
@@ -170,6 +172,10 @@
             </div>
 
             <p id="feedback"></p>
+
+            <div id="login-cta" class="login-cta">
+                🔒 Connecte-toi pour sauvegarder tes scores et apparaître dans le classement
+            </div>
 
             <button id="start-btn">
                 <svg class="btn-icon"><use href="#icon-sword"/></svg>
