@@ -238,6 +238,54 @@ async function saveGame() {
 // ============================================================
 // DASHBOARD
 // ============================================================
+// ============================================================
+// TROPHÉES
+// ============================================================
+const ACHIEVEMENTS = [
+    { id: 'first_step',  icon: '🎯', name: 'Premier pas',         desc: 'Jouer ta première partie',                  check: (s) => s.gamesCount >= 1 },
+    { id: 'regular',     icon: '🎮', name: 'Habitué',              desc: '10 parties jouées',                         check: (s) => s.gamesCount >= 10 },
+    { id: 'veteran',     icon: '⭐', name: 'Vétéran',              desc: '50 parties jouées',                         check: (s) => s.gamesCount >= 50 },
+    { id: 'machine_gun', icon: '🔥', name: 'Mitraillette',         desc: 'Trouver 15 champions en une partie',        check: (s) => s.bestNormal >= 15 },
+    { id: 'boss',        icon: '💪', name: 'Boss',                 desc: 'Trouver 25 champions en une partie',        check: (s) => s.bestNormal >= 25 },
+    { id: 'polyglot',    icon: '🌍', name: 'Polyglotte',           desc: '5 parties en FR et 5 en EN',                check: (s) => s.frCount >= 5 && s.enCount >= 5 },
+    { id: 'hardcore',    icon: '⚔️', name: 'Hardcore',             desc: '10 parties en mode Difficile',              check: (s) => s.hardCount >= 10 },
+    { id: 'survivor',    icon: '🛡️', name: 'Survivant',            desc: '10 champions en mode Survie',               check: (s) => s.bestSurvival >= 10 },
+    { id: 'survival_master', icon: '🦅', name: 'Maître de la Survie', desc: '20 champions en mode Survie',          check: (s) => s.bestSurvival >= 20 },
+    { id: 'encyclopedia', icon: '📚', name: 'Encyclopédie',        desc: 'Trouver 50 champions différents',           check: (s) => s.uniqueChamps >= 50 },
+];
+
+function computeAchievements(allGames, champStats) {
+    const stats = {
+        gamesCount: allGames.length,
+        bestNormal: Math.max(0, ...allGames.filter(g => g.mode === 'normal').map(g => g.score)),
+        bestSurvival: Math.max(0, ...allGames.filter(g => g.mode === 'survival').map(g => g.score)),
+        frCount: allGames.filter(g => g.lang === 'fr').length,
+        enCount: allGames.filter(g => g.lang === 'en').length,
+        hardCount: allGames.filter(g => g.difficulty === 'hard').length,
+        uniqueChamps: (champStats || []).filter(c => c.found > 0).length,
+    };
+    return ACHIEVEMENTS.map(a => ({ ...a, unlocked: a.check(stats) }));
+}
+
+function renderAchievements(achievements) {
+    const unlockedCount = achievements.filter(a => a.unlocked).length;
+    const items = achievements.map(a => `
+        <div class="achievement ${a.unlocked ? 'unlocked' : 'locked'}" title="${escapeHtml(a.desc)}">
+            <div class="ach-icon">${a.icon}</div>
+            <div class="ach-name">${escapeHtml(a.name)}</div>
+        </div>
+    `).join('');
+    return `
+        <div class="dash-section">
+            <div class="dash-section-title">🏅 Trophées (${unlockedCount}/${achievements.length})</div>
+            <div class="achievements-grid">${items}</div>
+        </div>
+    `;
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
 let dashCurrentMode = 'normal';
 
 function buildAreaChart(scores) {
@@ -283,6 +331,11 @@ async function showDashboard() {
         .eq('user_id', currentUser.id)
         .eq('mode', dashCurrentMode)
         .order('played_at', { ascending: false });
+
+    // Toutes les parties (pour les trophées, calculées sur l'ensemble)
+    const { data: allGamesUser } = await sb
+        .from('games').select('mode, score, lang, difficulty')
+        .eq('user_id', currentUser.id);
 
     const { data: champStats, error: statsErr } = await sb
         .from('champion_stats').select('*')
@@ -357,6 +410,7 @@ async function showDashboard() {
             <div class="dash-section-title">📈 Évolution (20 dernières parties)</div>
             ${chartHTML}
         </div>
+        ${renderAchievements(computeAchievements(allGamesUser || [], champStats || []))}
         ${bestChamp ? `<div class="dash-section"><div class="dash-section-title">🏆 ${TXT.bestChamp}</div><div style="color:#f0e6d2">${escapeHtml(bestChamp.champion_name)} — ${bestChamp.found} fois trouvé</div></div>` : ''}
         ${worstChamp ? `<div class="dash-section"><div class="dash-section-title">💀 ${TXT.worstChamp}</div><div style="color:#f0e6d2">${escapeHtml(worstChamp.champion_name)} — ${worstChamp.skipped} fois passé</div></div>` : ''}
         <div class="dash-section">
