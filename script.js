@@ -238,34 +238,63 @@ async function saveGame() {
 // ============================================================
 // DASHBOARD
 // ============================================================
+let dashCurrentMode = 'normal';
+
+function buildAreaChart(scores) {
+    if (!scores || scores.length === 0) {
+        return '<p style="color:#666;text-align:center;padding:20px">Pas encore de parties dans ce mode.</p>';
+    }
+    const W = 300, H = 100, PAD = 8;
+    const max = Math.max(...scores, 1);
+    const n = scores.length;
+    const stepX = n > 1 ? (W - PAD * 2) / (n - 1) : 0;
+    const points = scores.map((s, i) => {
+        const x = PAD + i * stepX;
+        const y = H - PAD - (s / max) * (H - PAD * 2);
+        return [x, y];
+    });
+    const linePath = points.map((p, i) => (i === 0 ? `M${p[0]},${p[1]}` : `L${p[0]},${p[1]}`)).join(' ');
+    const areaPath = `${linePath} L${points[n-1][0]},${H-PAD} L${points[0][0]},${H-PAD} Z`;
+    const dots = points.map(p => `<circle cx="${p[0]}" cy="${p[1]}" r="2.5" fill="#c8aa6e"/>`).join('');
+    return `
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="grad" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#c8aa6e" stop-opacity="0.55"/>
+                    <stop offset="100%" stop-color="#c8aa6e" stop-opacity="0"/>
+                </linearGradient>
+            </defs>
+            <path d="${areaPath}" fill="url(#grad)"/>
+            <path d="${linePath}" fill="none" stroke="#c8aa6e" stroke-width="1.8" stroke-linejoin="round"/>
+            ${dots}
+        </svg>
+    `;
+}
+
 async function showDashboard() {
     if (!currentUser) return;
-
     const modal = document.getElementById('dashboard-modal');
     const content = document.getElementById('dashboard-content');
     modal.style.display = 'flex';
     content.innerHTML = '<p style="color:#c8aa6e;text-align:center">Chargement...</p>';
 
-    // Récupérer les parties
     const { data: games, error: gamesErr } = await sb
-        .from('games')
-        .select('*')
+        .from('games').select('*')
         .eq('user_id', currentUser.id)
+        .eq('mode', dashCurrentMode)
         .order('played_at', { ascending: false });
 
-    // Récupérer les stats champions
     const { data: champStats, error: statsErr } = await sb
-        .from('champion_stats')
-        .select('*')
+        .from('champion_stats').select('*')
         .eq('user_id', currentUser.id)
         .order('found', { ascending: false });
 
-    // Leaderboard global
-    const { data: leaderboard, error: lbErr } = await sb
-        .from('games')
-        .select('score, lang, difficulty, profiles(username, avatar_url)')
-        .order('score', { ascending: false })
-        .limit(10);
+    const { data: allScores, error: lbErr } = await sb
+        .from('games').select('user_id, score')
+        .eq('mode', dashCurrentMode)
+        .eq('lang', lang)
+        .eq('difficulty', difficulty)
+        .order('score', { ascending: false });
 
     if (gamesErr || statsErr || lbErr) {
         console.error('Erreur dashboard:', gamesErr || statsErr || lbErr);
@@ -273,69 +302,75 @@ async function showDashboard() {
         return;
     }
 
+    const tabs = `<div class="dash-mode-tabs">
+        <button class="dash-tab ${dashCurrentMode==='normal'?'active':''}" data-mode="normal">Normal</button>
+        <button class="dash-tab ${dashCurrentMode==='survival'?'active':''}" data-mode="survival">Survie</button>
+    </div>`;
+
     if (!games || games.length === 0) {
-        content.innerHTML = `<p style="color:#888;text-align:center">${TXT.noGames}</p>`;
+        content.innerHTML = tabs + `<p style="color:#888;text-align:center;padding:20px">Aucune partie en mode ${dashCurrentMode==='survival'?'Survie':'Normal'}.</p>`;
+        attachDashTabs();
         return;
     }
 
     const highscore = Math.max(...games.map(g => g.score));
     const avg = Math.round(games.reduce((a, g) => a + g.score, 0) / games.length);
+    const totalFound = (champStats||[]).reduce((a, c) => a + (c.found||0), 0);
+    const totalSkipped = (champStats||[]).reduce((a, c) => a + (c.skipped||0), 0);
+    const successRate = totalFound + totalSkipped > 0 ? Math.round((totalFound/(totalFound+totalSkipped))*100) : 0;
     const bestChamp = champStats?.[0];
-    const worstChamp = champStats?.filter(c => c.skipped > 0).sort((a, b) => b.skipped - a.skipped)[0];
+    const worstChamp = champStats?.filter(c => c.skipped > 0).sort((a,b) => b.skipped - a.skipped)[0];
 
-    const leaderboardHTML = leaderboard?.map((g, i) => `
-        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2e33;">
-            <span style="color:${i === 0 ? '#c8aa6e' : '#f0e6d2'}">${i + 1}. ${escapeHtml(g.profiles?.username || 'Anonyme')}</span>
-            <span style="color:#c8aa6e;font-weight:bold">${g.score}</span>
-        </div>
-    `).join('') || '';
+    const bestByUser = new Map();
+    for (const row of (allScores||[])) {
+        if (!bestByUser.has(row.user_id) || row.score > bestByUser.get(row.user_id)) {
+            bestByUser.set(row.user_id, row.score);
+        }
+    }
+    const ranking = [...bestByUser.entries()].sort((a,b) => b[1] - a[1]);
+    const myRank = ranking.findIndex(([uid]) => uid === currentUser.id) + 1;
+    const rankHTML = myRank > 0
+        ? `<div class="dash-rank">🏆 Tu es <strong>${myRank}${myRank===1?'er':'ème'}</strong> sur ${ranking.length} en ${dashCurrentMode==='survival'?'Survie':'Normal'} · ${lang.toUpperCase()} · ${difficulty==='easy'?'Facile':'Difficile'}</div>`
+        : '';
+
+    const last20 = games.slice(0, 20).reverse().map(g => g.score);
+    const chartHTML = buildAreaChart(last20);
 
     const recentGames = games.slice(0, 5).map(g => `
         <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #2a2e33;font-size:0.85rem;">
             <span style="color:#888">${new Date(g.played_at).toLocaleDateString()}</span>
-            <span style="color:#888">${escapeHtml(g.difficulty)} · ${escapeHtml((g.lang || '').toUpperCase())}</span>
+            <span style="color:#888">${escapeHtml(g.difficulty)} · ${escapeHtml((g.lang||'').toUpperCase())}</span>
             <span style="color:#c8aa6e;font-weight:bold">${g.score} pts</span>
         </div>
     `).join('');
 
-    document.getElementById('dashboard-content').innerHTML = `
+    content.innerHTML = `
+        ${tabs}
+        ${rankHTML}
         <div class="dash-stats">
-            <div class="dash-stat">
-                <div class="dash-stat-value">${highscore}</div>
-                <div class="dash-stat-label">${TXT.highscore}</div>
-            </div>
-            <div class="dash-stat">
-                <div class="dash-stat-value">${avg}</div>
-                <div class="dash-stat-label">${TXT.avgScore}</div>
-            </div>
-            <div class="dash-stat">
-                <div class="dash-stat-value">${games.length}</div>
-                <div class="dash-stat-label">${TXT.gamesPlayed}</div>
-            </div>
+            <div class="dash-stat"><div class="dash-stat-value">${highscore}</div><div class="dash-stat-label">${TXT.highscore}</div></div>
+            <div class="dash-stat"><div class="dash-stat-value">${avg}</div><div class="dash-stat-label">${TXT.avgScore}</div></div>
+            <div class="dash-stat"><div class="dash-stat-value">${games.length}</div><div class="dash-stat-label">${TXT.gamesPlayed}</div></div>
+            <div class="dash-stat"><div class="dash-stat-value">${successRate}%</div><div class="dash-stat-label">Réussite</div></div>
         </div>
-
-        ${bestChamp ? `
         <div class="dash-section">
-            <div class="dash-section-title">🏆 ${TXT.bestChamp}</div>
-            <div style="color:#f0e6d2">${escapeHtml(bestChamp.champion_name)} — ${bestChamp.found} fois trouvé</div>
-        </div>` : ''}
-
-        ${worstChamp ? `
-        <div class="dash-section">
-            <div class="dash-section-title">💀 ${TXT.worstChamp}</div>
-            <div style="color:#f0e6d2">${escapeHtml(worstChamp.champion_name)} — ${worstChamp.skipped} fois passé</div>
-        </div>` : ''}
-
+            <div class="dash-section-title">📈 Évolution (20 dernières parties)</div>
+            ${chartHTML}
+        </div>
+        ${bestChamp ? `<div class="dash-section"><div class="dash-section-title">🏆 ${TXT.bestChamp}</div><div style="color:#f0e6d2">${escapeHtml(bestChamp.champion_name)} — ${bestChamp.found} fois trouvé</div></div>` : ''}
+        ${worstChamp ? `<div class="dash-section"><div class="dash-section-title">💀 ${TXT.worstChamp}</div><div style="color:#f0e6d2">${escapeHtml(worstChamp.champion_name)} — ${worstChamp.skipped} fois passé</div></div>` : ''}
         <div class="dash-section">
             <div class="dash-section-title">🕹️ Dernières parties</div>
             ${recentGames}
         </div>
-
-        <div class="dash-section">
-            <div class="dash-section-title">🌍 ${TXT.leaderboard}</div>
-            ${leaderboardHTML}
-        </div>
     `;
+    attachDashTabs();
+}
+
+function attachDashTabs() {
+    document.querySelectorAll('.dash-tab').forEach(btn => {
+        btn.onclick = () => { dashCurrentMode = btn.dataset.mode; showDashboard(); };
+    });
 }
 
 function closeDashboard() {

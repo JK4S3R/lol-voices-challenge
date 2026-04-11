@@ -1107,3 +1107,10 @@ h3 svg { width: 12px; height: 12px; vertical-align: middle; }
     font-size: 0.7rem;
     margin: 0 2px;
 }
+
+/* Dashboard v2 : onglets mode, rang, graphique */
+.dash-mode-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+.dash-tab { flex: 1; padding: 8px 12px; font-size: 0.8rem; background: rgba(10,18,30,0.8); border: 1px solid #2a2e33; color: #888; border-radius: 3px; cursor: pointer; }
+.dash-tab.active { background: linear-gradient(135deg, #785a28, #c8aa6e); color: #010a13; border-color: #c8aa6e; font-weight: bold; }
+.dash-rank { background: rgba(200,170,110,0.08); border: 1px solid rgba(200,170,110,0.3); border-radius: 4px; padding: 10px 14px; margin-bottom: 16px; color: #c8aa6e; font-size: 0.85rem; text-align: center; }
+.dash-rank strong { color: #ffe6a0; font-size: 1.05em; }
