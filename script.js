@@ -277,7 +277,7 @@ function renderAchievements(achievements) {
     `).join('');
     return `
         <div class="dash-section">
-            <div class="dash-section-title">🏅 Trophées (${unlockedCount}/${achievements.length})</div>
+            <div class="dash-section-title"><svg class="dash-icon"><use href="#icon-medal"/></svg> Trophées (${unlockedCount}/${achievements.length})</div>
             <div class="achievements-grid">${items}</div>
         </div>
     `;
@@ -383,7 +383,7 @@ async function showDashboard() {
     const ranking = [...bestByUser.entries()].sort((a,b) => b[1] - a[1]);
     const myRank = ranking.findIndex(([uid]) => uid === currentUser.id) + 1;
     const rankHTML = myRank > 0
-        ? `<div class="dash-rank">🏆 Tu es <strong>${myRank}${myRank===1?'er':'ème'}</strong> sur ${ranking.length} en ${dashCurrentMode==='survival'?'Survie':'Normal'} · ${lang.toUpperCase()} · ${difficulty==='easy'?'Facile':'Difficile'}</div>`
+        ? `<div class="dash-rank"><svg class="dash-icon"><use href="#icon-trophy-outline"/></svg> Tu es <strong>${myRank}${myRank===1?'er':'ème'}</strong> sur ${ranking.length} en ${dashCurrentMode==='survival'?'Survie':'Normal'} · ${lang.toUpperCase()} · ${difficulty==='easy'?'Facile':'Difficile'}</div>`
         : '';
 
     const last20 = games.slice(0, 20).reverse().map(g => g.score);
@@ -407,14 +407,14 @@ async function showDashboard() {
             <div class="dash-stat"><div class="dash-stat-value">${successRate}%</div><div class="dash-stat-label">Réussite</div></div>
         </div>
         <div class="dash-section">
-            <div class="dash-section-title">📈 Évolution (20 dernières parties)</div>
+            <div class="dash-section-title"><svg class="dash-icon"><use href="#icon-chart"/></svg> Évolution (20 dernières parties)</div>
             ${chartHTML}
         </div>
         ${renderAchievements(computeAchievements(allGamesUser || [], champStats || []))}
-        ${bestChamp ? `<div class="dash-section"><div class="dash-section-title">🏆 ${TXT.bestChamp}</div><div style="color:#f0e6d2">${escapeHtml(bestChamp.champion_name)} — ${bestChamp.found} fois trouvé</div></div>` : ''}
-        ${worstChamp ? `<div class="dash-section"><div class="dash-section-title">💀 ${TXT.worstChamp}</div><div style="color:#f0e6d2">${escapeHtml(worstChamp.champion_name)} — ${worstChamp.skipped} fois passé</div></div>` : ''}
+        ${bestChamp ? `<div class="dash-section"><div class="dash-section-title"><svg class="dash-icon"><use href="#icon-trophy-outline"/></svg> ${TXT.bestChamp}</div><div style="color:#f0e6d2">${escapeHtml(bestChamp.champion_name)} — ${bestChamp.found} fois trouvé</div></div>` : ''}
+        ${worstChamp ? `<div class="dash-section"><div class="dash-section-title"><svg class="dash-icon"><use href="#icon-skull"/></svg> ${TXT.worstChamp}</div><div style="color:#f0e6d2">${escapeHtml(worstChamp.champion_name)} — ${worstChamp.skipped} fois passé</div></div>` : ''}
         <div class="dash-section">
-            <div class="dash-section-title">🕹️ Dernières parties</div>
+            <div class="dash-section-title"><svg class="dash-icon"><use href="#icon-gamepad"/></svg> Dernières parties</div>
             ${recentGames}
         </div>
     `;
@@ -890,7 +890,7 @@ async function loadLeaderboard(lang = 'fr', difficulty = 'easy', mode = 'normal'
         .limit(50);
 
     if (error || !data || data.length === 0) {
-        lbList.innerHTML = '<p class="lb-empty">Sois le premier à marquer ! 🏆</p>';
+        lbList.innerHTML = '<p class="lb-empty">Sois le premier à marquer !</p>';
         return;
     }
 
