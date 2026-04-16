@@ -224,6 +224,48 @@
                 Démarrer la partie
             </button>
 
+            <button id="multi-btn" class="multi-btn">
+                <svg class="btn-icon"><use href="#icon-trophy-outline"/></svg>
+                Jouer en multijoueur
+            </button>
+
+            <!-- ÉCRAN MULTIJOUEUR (Session 6A) -->
+            <div id="multi-screen" style="display:none;">
+                <div id="multi-setup">
+                    <h2 class="multi-title">Multijoueur</h2>
+                    <div class="multi-field">
+                        <label>Ton pseudo</label>
+                        <input type="text" id="multi-pseudo" maxlength="20" placeholder="Pseudo" autocomplete="off">
+                    </div>
+                    <button id="multi-create-btn" class="multi-action">Créer une room</button>
+                    <div class="multi-separator">ou</div>
+                    <div class="multi-join-row">
+                        <input type="text" id="multi-code-input" maxlength="4" placeholder="CODE" autocomplete="off" style="text-transform:uppercase">
+                        <button id="multi-join-btn">Rejoindre</button>
+                    </div>
+                    <button id="multi-back-btn" class="multi-back">← Retour</button>
+                </div>
+
+                <div id="multi-lobby" style="display:none;">
+                    <h2 class="multi-title">Lobby</h2>
+                    <div class="lobby-code-block">
+                        <div class="lobby-code-label">Code de la room</div>
+                        <div id="lobby-code" class="lobby-code">ABCD</div>
+                        <div class="lobby-share">
+                            <span id="lobby-share-url"></span>
+                            <button id="lobby-copy-btn">Copier</button>
+                        </div>
+                    </div>
+                    <div class="lobby-info">
+                        <span id="lobby-settings"></span> · <span id="lobby-count">0/8</span>
+                    </div>
+                    <ul id="lobby-players" class="lobby-players"></ul>
+                    <button id="lobby-launch-btn" class="multi-action" style="display:none">Lancer la partie</button>
+                    <div id="lobby-waiting-msg" class="lobby-waiting">En attente que le host lance la partie...</div>
+                    <button id="lobby-leave-btn" class="multi-back">← Quitter la room</button>
+                </div>
+            </div>
+
             <div id="game-area" style="display: none;">
                 <button id="play-btn">
                     <svg class="btn-icon"><use href="#icon-sound"/></svg>

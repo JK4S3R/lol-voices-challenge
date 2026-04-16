@@ -947,3 +947,204 @@ document.addEventListener('DOMContentLoaded', async () => {
         initSupabase();
     }
 });
+// ============================================================
+// MULTIJOUEUR (Session 6A — Lobby uniquement)
+// ============================================================
+let currentMatch = null;       // { id, code, host_user_id, status, lang, difficulty }
+let currentPlayer = null;      // { id, match_id, user_id, pseudo }
+let matchChannel = null;       // Supabase Realtime channel
+
+function genRoomCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+function getDefaultPseudo() {
+    if (currentUser?.user_metadata?.full_name) return currentUser.user_metadata.full_name;
+    if (currentUser?.email) return currentUser.email.split('@')[0];
+    return 'Joueur' + Math.floor(Math.random() * 1000);
+}
+
+function openMultiScreen() {
+    document.getElementById('multi-screen').style.display = 'block';
+    document.getElementById('multi-setup').style.display = 'block';
+    document.getElementById('multi-lobby').style.display = 'none';
+    document.querySelector('.game-container > .tagline').style.display = 'none';
+    document.getElementById('setup-area').style.display = 'none';
+    document.getElementById('start-btn').style.display = 'none';
+    document.getElementById('multi-btn').style.display = 'none';
+    document.getElementById('login-cta').style.display = 'none';
+    document.getElementById('settings-btn-mobile').style.display = 'none';
+    // Pré-remplir pseudo
+    document.getElementById('multi-pseudo').value = getDefaultPseudo();
+}
+
+function closeMultiScreen() {
+    // Se désinscrire du channel si actif
+    if (matchChannel) {
+        matchChannel.unsubscribe();
+        matchChannel = null;
+    }
+    currentMatch = null;
+    currentPlayer = null;
+    document.getElementById('multi-screen').style.display = 'none';
+    document.querySelector('.game-container > .tagline').style.display = '';
+    document.getElementById('setup-area').style.display = '';
+    document.getElementById('start-btn').style.display = '';
+    document.getElementById('multi-btn').style.display = '';
+    if (!currentUser) document.getElementById('login-cta').style.display = '';
+}
+
+async function createRoom() {
+    if (!sb) initSupabase();
+    const pseudo = document.getElementById('multi-pseudo').value.trim();
+    if (!pseudo) { alert('Choisis un pseudo.'); return; }
+
+    const code = genRoomCode();
+    const { data: match, error } = await sb.from('matches').insert({
+        code,
+        host_user_id: currentUser?.id || null,
+        lang,
+        difficulty,
+        status: 'waiting'
+    }).select().single();
+
+    if (error) { console.error(error); alert('Erreur création room'); return; }
+
+    const { data: player, error: pErr } = await sb.from('match_players').insert({
+        match_id: match.id,
+        user_id: currentUser?.id || null,
+        pseudo
+    }).select().single();
+
+    if (pErr) { console.error(pErr); alert('Erreur rejoindre room'); return; }
+
+    currentMatch = match;
+    currentPlayer = player;
+    subscribeToMatch(match.id);
+    showLobby();
+}
+
+async function joinRoom() {
+    if (!sb) initSupabase();
+    const pseudo = document.getElementById('multi-pseudo').value.trim();
+    const code = document.getElementById('multi-code-input').value.trim().toUpperCase();
+    if (!pseudo) { alert('Choisis un pseudo.'); return; }
+    if (code.length !== 4) { alert('Le code doit faire 4 caractères.'); return; }
+
+    const { data: match, error } = await sb.from('matches').select('*').eq('code', code).single();
+    if (error || !match) { alert('Room introuvable.'); return; }
+    if (match.status !== 'waiting') { alert('Cette partie est déjà lancée ou terminée.'); return; }
+
+    // Vérifier le nombre de joueurs
+    const { count } = await sb.from('match_players').select('*', { count: 'exact', head: true }).eq('match_id', match.id);
+    if (count >= 8) { alert('Room complète (8 joueurs max).'); return; }
+
+    const { data: player, error: pErr } = await sb.from('match_players').insert({
+        match_id: match.id,
+        user_id: currentUser?.id || null,
+        pseudo
+    }).select().single();
+
+    if (pErr) {
+        if (pErr.code === '23505') alert('Ce pseudo est déjà pris dans cette room.');
+        else { console.error(pErr); alert('Erreur pour rejoindre.'); }
+        return;
+    }
+
+    currentMatch = match;
+    currentPlayer = player;
+    subscribeToMatch(match.id);
+    showLobby();
+}
+
+function subscribeToMatch(matchId) {
+    if (matchChannel) matchChannel.unsubscribe();
+    matchChannel = sb.channel(`match:${matchId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players', filter: `match_id=eq.${matchId}` }, () => refreshPlayers())
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `id=eq.${matchId}` }, (payload) => {
+            currentMatch = payload.new;
+            // Pour Session 6A, on réagit juste visuellement. Le lancement viendra en 6B.
+            if (currentMatch.status === 'playing') {
+                alert('La partie est lancée par le host ! (Le gameplay multi sera ajouté en Session 6B.)');
+            }
+        })
+        .subscribe();
+    refreshPlayers();
+}
+
+async function refreshPlayers() {
+    if (!currentMatch) return;
+    const { data: players } = await sb.from('match_players').select('*').eq('match_id', currentMatch.id).order('joined_at', { ascending: true });
+    renderLobby(players || []);
+}
+
+function renderLobby(players) {
+    document.getElementById('lobby-code').textContent = currentMatch.code;
+    const shareUrl = `${location.origin}${location.pathname}?room=${currentMatch.code}`;
+    document.getElementById('lobby-share-url').textContent = shareUrl;
+    document.getElementById('lobby-settings').textContent = `${currentMatch.lang.toUpperCase()} · ${currentMatch.difficulty === 'easy' ? 'Facile' : 'Difficile'}`;
+    document.getElementById('lobby-count').textContent = `${players.length}/8`;
+
+    const list = document.getElementById('lobby-players');
+    list.innerHTML = players.map(p => {
+        const isHost = p.user_id === currentMatch.host_user_id;
+        const isMe = p.id === currentPlayer.id;
+        return `<li class="${isMe ? 'me' : ''}">${escapeHtml(p.pseudo)}${isHost ? ' 👑' : ''}${isMe ? ' (toi)' : ''}</li>`;
+    }).join('');
+
+    // Afficher "Lancer" uniquement pour le host
+    const isHost = currentPlayer.user_id && currentPlayer.user_id === currentMatch.host_user_id;
+    document.getElementById('lobby-launch-btn').style.display = isHost ? '' : 'none';
+    document.getElementById('lobby-waiting-msg').style.display = isHost ? 'none' : '';
+}
+
+function showLobby() {
+    document.getElementById('multi-setup').style.display = 'none';
+    document.getElementById('multi-lobby').style.display = 'block';
+}
+
+async function launchMatch() {
+    if (!currentMatch) return;
+    // En Session 6A, juste mettre le statut à 'playing' pour tester le Realtime
+    // La vraie logique de gameplay viendra en Session 6B
+    const { error } = await sb.from('matches').update({ status: 'playing', started_at: new Date().toISOString() }).eq('id', currentMatch.id);
+    if (error) { console.error(error); alert('Erreur lancement'); }
+}
+
+async function leaveLobby() {
+    if (currentPlayer) {
+        await sb.from('match_players').delete().eq('id', currentPlayer.id);
+    }
+    closeMultiScreen();
+}
+
+function copyShareLink() {
+    const shareUrl = `${location.origin}${location.pathname}?room=${currentMatch.code}`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        const btn = document.getElementById('lobby-copy-btn');
+        const old = btn.textContent;
+        btn.textContent = 'Copié !';
+        setTimeout(() => { btn.textContent = old; }, 1500);
+    });
+}
+
+// Branchement des handlers (exécuté au chargement)
+document.addEventListener('DOMContentLoaded', () => {
+    const mBtn = document.getElementById('multi-btn');
+    if (mBtn) mBtn.onclick = openMultiScreen;
+    document.getElementById('multi-back-btn').onclick = closeMultiScreen;
+    document.getElementById('multi-create-btn').onclick = createRoom;
+    document.getElementById('multi-join-btn').onclick = joinRoom;
+    document.getElementById('lobby-launch-btn').onclick = launchMatch;
+    document.getElementById('lobby-leave-btn').onclick = leaveLobby;
+    document.getElementById('lobby-copy-btn').onclick = copyShareLink;
+
+    // Si ?room=XXXX dans l'URL, pré-remplir le code et ouvrir l'écran multi
+    const params = new URLSearchParams(location.search);
+    const roomParam = params.get('room');
+    if (roomParam && roomParam.length === 4) {
+        openMultiScreen();
+        document.getElementById('multi-code-input').value = roomParam.toUpperCase();
+    }
+});
