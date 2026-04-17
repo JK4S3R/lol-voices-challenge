@@ -953,6 +953,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 let currentMatch = null;       // { id, code, host_user_id, status, lang, difficulty }
 let currentPlayer = null;      // { id, match_id, user_id, pseudo }
 let matchChannel = null;       // Supabase Realtime channel
+let isHostLocal = false;       // true si c'est nous qui avons créé la room
 
 function genRoomCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -1021,6 +1022,7 @@ async function createRoom() {
 
     currentMatch = match;
     currentPlayer = player;
+    isHostLocal = true;
     subscribeToMatch(match.id);
     showLobby();
 }
@@ -1054,6 +1056,7 @@ async function joinRoom() {
 
     currentMatch = match;
     currentPlayer = player;
+    isHostLocal = false;
     subscribeToMatch(match.id);
     showLobby();
 }
@@ -1086,14 +1089,14 @@ function renderLobby(players) {
     document.getElementById('lobby-count').textContent = `${players.length}/8`;
 
     const list = document.getElementById('lobby-players');
-    list.innerHTML = players.map(p => {
-        const isHost = p.user_id === currentMatch.host_user_id;
+    list.innerHTML = players.map((p, i) => {
+        const isHost = i === 0;  // le premier joueur est le host (trié par joined_at asc)
         const isMe = p.id === currentPlayer.id;
         return `<li class="${isMe ? 'me' : ''}">${escapeHtml(p.pseudo)}${isHost ? ' 👑' : ''}${isMe ? ' (toi)' : ''}</li>`;
     }).join('');
 
     // Afficher "Lancer" uniquement pour le host
-    const isHost = currentPlayer.user_id && currentPlayer.user_id === currentMatch.host_user_id;
+    const isHost = isHostLocal;
     document.getElementById('lobby-launch-btn').style.display = isHost ? '' : 'none';
     document.getElementById('lobby-waiting-msg').style.display = isHost ? 'none' : '';
 }
@@ -1247,7 +1250,7 @@ async function showMultiResults() {
     document.getElementById('lobby-settings').textContent = `${currentMatch.lang.toUpperCase()} · ${currentMatch.difficulty === 'easy' ? 'Facile' : 'Difficile'}`;
 
     // Afficher "Rejouer" pour le host, "En attente" pour les autres
-    const isHost = currentPlayer.user_id && currentPlayer.user_id === currentMatch.host_user_id;
+    const isHost = isHostLocal;
     document.getElementById('lobby-launch-btn').textContent = 'Rejouer';
     document.getElementById('lobby-launch-btn').style.display = isHost ? '' : 'none';
     document.getElementById('lobby-waiting-msg').textContent = 'En attente que le host relance...';
