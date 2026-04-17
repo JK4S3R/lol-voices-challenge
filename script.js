@@ -1064,9 +1064,8 @@ function subscribeToMatch(matchId) {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'match_players', filter: `match_id=eq.${matchId}` }, () => refreshPlayers())
         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'matches', filter: `id=eq.${matchId}` }, (payload) => {
             currentMatch = payload.new;
-            // Pour Session 6A, on réagit juste visuellement. Le lancement viendra en 6B.
-            if (currentMatch.status === 'playing') {
-                alert('La partie est lancée par le host ! (Le gameplay multi sera ajouté en Session 6B.)');
+            if (currentMatch.status === 'playing' && currentMatch.seed) {
+                startMultiCountdown();
             }
         })
         .subscribe();
@@ -1106,13 +1105,264 @@ function showLobby() {
 
 async function launchMatch() {
     if (!currentMatch) return;
-    // En Session 6A, juste mettre le statut à 'playing' pour tester le Realtime
-    // La vraie logique de gameplay viendra en Session 6B
-    const { error } = await sb.from('matches').update({ status: 'playing', started_at: new Date().toISOString() }).eq('id', currentMatch.id);
+    // Générer la seed : mélanger tous les champions et prendre leurs IDs
+    const seedChamps = [...champions];
+    shuffle(seedChamps);
+    const seed = seedChamps.map(c => c.id);
+
+    const { error } = await sb.from('matches').update({
+        status: 'playing',
+        seed: seed,
+        started_at: new Date().toISOString()
+    }).eq('id', currentMatch.id);
+
     if (error) { console.error(error); alert('Erreur lancement'); }
+    // Le Realtime va détecter le changement et déclencher startMultiGame chez tous
 }
 
 async function leaveLobby() {
+
+let multiMode = false;  // flag pour savoir si on est en partie multi
+let multiSeed = [];     // array de champion IDs partagé
+let multiSeedIndex = 0; // index courant dans la seed
+
+function startMultiCountdown() {
+    // Cacher le lobby, afficher un countdown plein écran
+    document.getElementById('multi-lobby').style.display = 'none';
+    const overlay = document.createElement('div');
+    overlay.className = 'countdown-overlay';
+    overlay.id = 'countdown-overlay';
+    overlay.innerHTML = '<div class="countdown-number">3</div>';
+    document.querySelector('.game-container').appendChild(overlay);
+
+    let count = 3;
+    const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+            overlay.innerHTML = `<div class="countdown-number">${count}</div>`;
+        } else if (count === 0) {
+            overlay.innerHTML = '<div class="countdown-number countdown-go">GO !</div>';
+        } else {
+            clearInterval(interval);
+            overlay.remove();
+            startMultiGame();
+        }
+    }, 800);
+}
+
+function startMultiGame() {
+    multiMode = true;
+    multiSeed = currentMatch.seed;
+    multiSeedIndex = 0;
+
+    // Appliquer les settings du match
+    lang = currentMatch.lang;
+    difficulty = currentMatch.difficulty;
+    gameMode = 'normal'; // Multi est toujours en mode Normal
+
+    // Initialiser le jeu comme d'habitude mais avec la seed partagée
+    score = 0;
+    TOTAL_TIME = 90;
+    timeLeft = TOTAL_TIME;
+    scoreDisplay.textContent = '0';
+    feedback.textContent = '';
+    historyContainer.innerHTML = '';
+    gameChampionsFound = [];
+    gameChampionsSkipped = [];
+
+    document.getElementById('multi-screen').style.display = 'none';
+    document.getElementById('game-area').style.display = 'block';
+    document.getElementById('game-info').style.display = '';
+    document.getElementById('history-container').style.display = '';
+
+    // Construire la liste des champions disponibles à partir de la seed
+    availableChamps = multiSeed.map(id => champions.find(c => c.id === id)).filter(Boolean);
+    nextChampionMulti();
+
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimer();
+        if (timeLeft <= 0) endMultiGame();
+    }, 1000);
+}
+
+function nextChampionMulti() {
+    if (multiSeedIndex >= availableChamps.length) {
+        // Plus de champions dans la seed (très improbable en 90s)
+        endMultiGame();
+        return;
+    }
+    currentChamp = availableChamps[multiSeedIndex];
+    multiSeedIndex++;
+    playAudio(currentChamp);
+    input.value = '';
+    list.innerHTML = '';
+    document.getElementById('champ-image').style.display = 'none';
+    input.focus();
+}
+
+async function broadcastScore() {
+    if (!currentMatch || !currentPlayer) return;
+    await sb.from('match_players').update({ score }).eq('id', currentPlayer.id);
+}
+
+async function endMultiGame() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    multiMode = false;
+
+    // Sauvegarder le score final dans match_players
+    if (currentPlayer) {
+        await sb.from('match_players').update({ score, finished: true }).eq('id', currentPlayer.id);
+    }
+
+    // Afficher l'écran de résultats multi
+    document.getElementById('game-area').style.display = 'none';
+    document.getElementById('game-info').style.display = 'none';
+    document.getElementById('history-container').style.display = 'none';
+    player.pause();
+
+    showMultiResults();
+}
+
+async function showMultiResults() {
+    document.getElementById('multi-screen').style.display = 'block';
+    document.getElementById('multi-setup').style.display = 'none';
+    document.getElementById('multi-lobby').style.display = 'block';
+
+    const { data: players } = await sb.from('match_players').select('*').eq('match_id', currentMatch.id).order('score', { ascending: false });
+
+    const podium = (players || []).map((p, i) => {
+        const isMe = p.id === currentPlayer.id;
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+        return `<li class="${isMe ? 'me' : ''}">${medal} ${escapeHtml(p.pseudo)} — <strong>${p.score} pts</strong>${isMe ? ' (toi)' : ''}${p.finished ? '' : ' ⏳'}</li>`;
+    }).join('');
+
+    document.getElementById('lobby-players').innerHTML = podium;
+    document.getElementById('lobby-code').textContent = `Résultats — Room ${currentMatch.code}`;
+    document.getElementById('lobby-code-block') && (document.querySelector('.lobby-code-label').textContent = 'Partie terminée');
+    document.getElementById('lobby-share').style.display = 'none';
+    document.getElementById('lobby-count').textContent = '';
+    document.getElementById('lobby-settings').textContent = `${currentMatch.lang.toUpperCase()} · ${currentMatch.difficulty === 'easy' ? 'Facile' : 'Difficile'}`;
+
+    // Afficher "Rejouer" pour le host, "En attente" pour les autres
+    const isHost = currentPlayer.user_id && currentPlayer.user_id === currentMatch.host_user_id;
+    document.getElementById('lobby-launch-btn').textContent = 'Rejouer';
+    document.getElementById('lobby-launch-btn').style.display = isHost ? '' : 'none';
+    document.getElementById('lobby-waiting-msg').textContent = 'En attente que le host relance...';
+    document.getElementById('lobby-waiting-msg').style.display = isHost ? 'none' : '';
+
+    // Auto-refresh les résultats toutes les 3s pour voir les autres finir
+    if (!currentMatch._resultInterval) {
+        currentMatch._resultInterval = setInterval(async () => {
+            if (!currentMatch || currentMatch.status !== 'playing') {
+                clearInterval(currentMatch._resultInterval);
+                return;
+            }
+            const { data: updated } = await sb.from('match_players').select('*').eq('match_id', currentMatch.id).order('score', { ascending: false });
+            if (updated) {
+                const html = updated.map((p, i) => {
+                    const isMe = p.id === currentPlayer.id;
+                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+                    return `<li class="${isMe ? 'me' : ''}">${medal} ${escapeHtml(p.pseudo)} — <strong>${p.score} pts</strong>${isMe ? ' (toi)' : ''}${p.finished ? '' : ' ⏳'}</li>`;
+                }).join('');
+                document.getElementById('lobby-players').innerHTML = html;
+            }
+        }, 3000);
+    }
+}
+
+// Overrider nextChampion et check pour le mode multi
+const _originalNextChampion = nextChampion;
+const _originalCheck = check;
+const _originalSkipChampion = skipChampion;
+const _originalEndGame = endGame;
+
+nextChampion = function() {
+    if (multiMode) return nextChampionMulti();
+    return _originalNextChampion();
+};
+
+const origCheckInner = check;
+check = function() {
+    if (!currentChamp) return;
+    if (normalize(input.value) === normalize(currentChamp.name)) {
+        score++;
+        scoreDisplay.textContent = score;
+        animateScore();
+        if (gameMode === 'survival' && !multiMode) {
+            timeLeft = TOTAL_TIME;
+            updateTimer();
+        }
+        feedback.textContent = 'Bien joué ! ' + currentChamp.name;
+        feedback.style.color = '#00e676';
+        feedback.classList.remove('animate');
+        void feedback.offsetWidth;
+        feedback.classList.add('animate');
+        gameChampionsFound.push(currentChamp);
+        const img = document.createElement('img');
+        img.src = `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/champion-icons/${currentChamp.id}.png`;
+        img.classList.add('history-icon', 'new');
+        img.title = currentChamp.name;
+        historyContainer.prepend(img);
+        setTimeout(() => img.classList.remove('new'), 400);
+        list.innerHTML = '';
+        if (multiMode) broadcastScore();
+        nextChampion();
+    } else {
+        feedback.textContent = 'Faux !';
+        feedback.style.color = '#ff4e50';
+        feedback.classList.remove('animate');
+        void feedback.offsetWidth;
+        feedback.classList.add('animate');
+        input.classList.remove('shake');
+        void input.offsetWidth;
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 500);
+        input.value = '';
+    }
+};
+
+skipChampion = function() {
+    if (!currentChamp) return;
+    gameChampionsSkipped.push(currentChamp);
+    const penalty = multiMode ? 5 : (gameMode === 'survival' ? 3 : 5);
+    feedback.textContent = "C'était " + currentChamp.name + "  (−" + penalty + "s)";
+    feedback.style.color = '#ff9040';
+    feedback.classList.remove('animate');
+    void feedback.offsetWidth;
+    feedback.classList.add('animate');
+    timeLeft = Math.max(0, timeLeft - penalty);
+    updateTimer();
+    if (timeLeft <= 0) {
+        if (multiMode) endMultiGame();
+        else endGame();
+        return;
+    }
+    if (multiMode) broadcastScore();
+    nextChampion();
+};
+
+// Rejouer en multi : le host relance avec une nouvelle seed
+const _origLaunchMatch = launchMatch;
+launchMatch = async function() {
+    if (currentMatch && currentMatch.status === 'playing') {
+        // Rejouer : reset les scores, nouvelle seed
+        await sb.from('match_players').update({ score: 0, finished: false }).eq('match_id', currentMatch.id);
+        if (currentMatch._resultInterval) clearInterval(currentMatch._resultInterval);
+    }
+    // Générer la seed et relancer
+    const seedChamps = [...champions];
+    shuffle(seedChamps);
+    const seed = seedChamps.map(c => c.id);
+    const { error } = await sb.from('matches').update({
+        status: 'playing',
+        seed: seed,
+        started_at: new Date().toISOString()
+    }).eq('id', currentMatch.id);
+    if (error) { console.error(error); alert('Erreur lancement'); }
+};
     if (currentPlayer) {
         await sb.from('match_players').delete().eq('id', currentPlayer.id);
     }

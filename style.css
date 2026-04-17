@@ -1165,3 +1165,12 @@ h3 svg { width: 12px; height: 12px; vertical-align: middle; }
 .lobby-players li { padding: 10px 14px; background: rgba(10,18,30,0.8); border: 1px solid #2a2e33; border-radius: 3px; margin-bottom: 6px; color: #f0e6d2; font-size: 0.9rem; transition: all 0.2s; }
 .lobby-players li.me { border-color: #c8aa6e; background: rgba(200,170,110,0.08); color: #c8aa6e; }
 .lobby-waiting { text-align: center; color: #888; font-size: 0.85rem; font-style: italic; padding: 12px; }
+
+/* Countdown overlay */
+.countdown-overlay { position: absolute; inset: 0; background: rgba(1,10,19,0.95); display: flex; align-items: center; justify-content: center; z-index: 3000; border-radius: 4px; }
+.countdown-number { font-size: 4rem; font-weight: bold; color: #c8aa6e; text-shadow: 0 0 40px rgba(200,170,110,0.6); animation: countdown-pop 0.6s ease-out; letter-spacing: 4px; }
+.countdown-go { color: #00e676; text-shadow: 0 0 40px rgba(0,230,118,0.6); }
+@keyframes countdown-pop { 0% { transform: scale(0.3); opacity: 0; } 50% { transform: scale(1.15); } 100% { transform: scale(1); opacity: 1; } }
+
+/* Multi results : scores en gras */
+.lobby-players li strong { color: #c8aa6e; }
